@@ -15,7 +15,8 @@ vi.mock('fs-extra', () => ({
 
 describe('replaceTemplateVars', () => {
   it('替换所有已知变量', () => {
-    const content = 'Agent: {{agent_name}} ({{agent_id}}) installed {{install_date}} model={{model}}'
+    const content =
+      'Agent: {{agent_name}} ({{agent_id}}) installed {{install_date}} model={{model}}'
     const result = replaceTemplateVars(content, {
       agentId: 'bmad-expert',
       agentName: 'BMAD Expert',
@@ -70,16 +71,30 @@ describe('writeAgentFiles', () => {
     vi.clearAllMocks()
   })
 
-  it('路径含 .. 时抛出 BmadError E004', async () => {
+  it('路径含 .. 路径段时抛出 BmadError E002', async () => {
     await expect(
       writeAgentFiles('/home/user/../etc/passwd', { agentId: 'test' })
-    ).rejects.toMatchObject({ bmadCode: 'E004' })
+    ).rejects.toMatchObject({ bmadCode: 'E002' })
   })
 
   it('路径含 .. 时抛出的错误是 BmadError 实例', async () => {
+    await expect(writeAgentFiles('/tmp/../etc', { agentId: 'test' })).rejects.toBeInstanceOf(
+      BmadError
+    )
+  })
+
+  it('目录名包含 .. 但不是路径段时允许写入', async () => {
+    const fsExtra = (await import('fs-extra')).default
     await expect(
-      writeAgentFiles('/tmp/../etc', { agentId: 'test' })
-    ).rejects.toBeInstanceOf(BmadError)
+      writeAgentFiles('/home/user/my..project/agents/test', { agentId: 'test' })
+    ).resolves.toBeUndefined()
+    expect(fsExtra.ensureDir).toHaveBeenCalledWith('/home/user/my..project/agents/test')
+  })
+
+  it('相对路径时抛出 BmadError E002', async () => {
+    await expect(writeAgentFiles('relative/path', { agentId: 'test' })).rejects.toMatchObject({
+      bmadCode: 'E002',
+    })
   })
 
   it('正常路径时调用 ensureDir', async () => {
@@ -119,5 +134,44 @@ describe('writeAgentFiles', () => {
       expect(content).not.toContain('{{agent_id}}')
       expect(content).not.toContain('{{install_date}}')
     }
+  })
+
+  it('创建目录权限失败时包装为 BmadError E004 并保留 cause', async () => {
+    const fsExtra = (await import('fs-extra')).default
+    const permissionError = Object.assign(new Error('permission denied'), { code: 'EACCES' })
+    fsExtra.ensureDir.mockRejectedValueOnce(permissionError)
+
+    await expect(
+      writeAgentFiles('/home/user/.happycapy/agents/test', { agentId: 'test' })
+    ).rejects.toMatchObject({
+      bmadCode: 'E004',
+      cause: permissionError,
+    })
+  })
+
+  it('读取模板失败时包装为 BmadError E001 并保留 cause', async () => {
+    const fsExtra = (await import('fs-extra')).default
+    const ioError = Object.assign(new Error('missing template'), { code: 'ENOENT' })
+    fsExtra.readFile.mockRejectedValueOnce(ioError)
+
+    await expect(
+      writeAgentFiles('/home/user/.happycapy/agents/test', { agentId: 'test' })
+    ).rejects.toMatchObject({
+      bmadCode: 'E001',
+      cause: ioError,
+    })
+  })
+
+  it('写入模板失败时包装为 BmadError E004 并保留 cause', async () => {
+    const fsExtra = (await import('fs-extra')).default
+    const permissionError = Object.assign(new Error('cannot write'), { code: 'EPERM' })
+    fsExtra.outputFile.mockRejectedValueOnce(permissionError)
+
+    await expect(
+      writeAgentFiles('/home/user/.happycapy/agents/test', { agentId: 'test' })
+    ).rejects.toMatchObject({
+      bmadCode: 'E004',
+      cause: permissionError,
+    })
   })
 })
