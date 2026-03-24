@@ -3,7 +3,7 @@
 
 # BOOTSTRAP
 
-This file was installed by bmad-expert ({{agent_id}}) on {{install_date}}.
+This file was installed by {{agent_name}} ({{agent_id}}) on {{install_date}}.
 
 <!-- Story 4.2 will add:
   - BMAD methodology brief introduction (≤200 words) (FR27)

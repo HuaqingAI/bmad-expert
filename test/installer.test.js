@@ -1,0 +1,123 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { replaceTemplateVars, writeAgentFiles } from '../lib/installer.js'
+import { BmadError } from '../lib/errors.js'
+
+// mock fs-extra — vi.mock 被 vitest 自动 hoist 到文件顶部执行
+vi.mock('fs-extra', () => ({
+  default: {
+    ensureDir: vi.fn().mockResolvedValue(undefined),
+    readFile: vi.fn().mockResolvedValue('Hello {{agent_id}} on {{install_date}}'),
+    outputFile: vi.fn().mockResolvedValue(undefined),
+  },
+}))
+
+// ─── replaceTemplateVars ───────────────────────────────────────────────────
+
+describe('replaceTemplateVars', () => {
+  it('替换所有已知变量', () => {
+    const content = 'Agent: {{agent_name}} ({{agent_id}}) installed {{install_date}} model={{model}}'
+    const result = replaceTemplateVars(content, {
+      agentId: 'bmad-expert',
+      agentName: 'BMAD Expert',
+      model: 'claude-sonnet',
+      installDate: '2026-03-24',
+    })
+    expect(result).toBe('Agent: BMAD Expert (bmad-expert) installed 2026-03-24 model=claude-sonnet')
+    expect(result).not.toMatch(/\{\{.*?\}\}/) // 无残留已知占位符
+  })
+
+  it('空值替换为空字符串（不报错，不保留占位符）', () => {
+    const result = replaceTemplateVars('{{agent_id}}', { agentId: '' })
+    expect(result).toBe('')
+  })
+
+  it('未传入变量时默认替换为空字符串', () => {
+    const result = replaceTemplateVars('{{agent_id}} {{agent_name}}', {})
+    expect(result).toBe(' ')
+  })
+
+  it('变量值含 $ 特殊字符时不产生 regex 副作用', () => {
+    const result = replaceTemplateVars('{{agent_name}}', { agentName: 'Agent$2' })
+    expect(result).toBe('Agent$2')
+  })
+
+  it('变量值含 $& 特殊字符时不扩展为匹配子串', () => {
+    const result = replaceTemplateVars('{{agent_name}}', { agentName: '$&-suffix' })
+    expect(result).toBe('$&-suffix')
+  })
+
+  it('多次出现的变量全部替换', () => {
+    const content = '{{agent_id}} and {{agent_id}} again'
+    const result = replaceTemplateVars(content, { agentId: 'my-agent' })
+    expect(result).toBe('my-agent and my-agent again')
+  })
+
+  it('未知占位符（非 4 个已知变量）保持原样', () => {
+    const result = replaceTemplateVars('{{unknown_var}}', {
+      agentId: 'test',
+      agentName: 'Test',
+      model: '',
+      installDate: '2026-03-24',
+    })
+    expect(result).toBe('{{unknown_var}}')
+  })
+})
+
+// ─── writeAgentFiles ───────────────────────────────────────────────────────
+
+describe('writeAgentFiles', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('路径含 .. 时抛出 BmadError E004', async () => {
+    await expect(
+      writeAgentFiles('/home/user/../etc/passwd', { agentId: 'test' })
+    ).rejects.toMatchObject({ bmadCode: 'E004' })
+  })
+
+  it('路径含 .. 时抛出的错误是 BmadError 实例', async () => {
+    await expect(
+      writeAgentFiles('/tmp/../etc', { agentId: 'test' })
+    ).rejects.toBeInstanceOf(BmadError)
+  })
+
+  it('正常路径时调用 ensureDir', async () => {
+    const fsExtra = (await import('fs-extra')).default
+    await writeAgentFiles('/home/user/.happycapy/agents/test', {
+      agentId: 'test',
+      agentName: 'Test Agent',
+      model: '',
+      installDate: '2026-03-24',
+    })
+    expect(fsExtra.ensureDir).toHaveBeenCalledWith('/home/user/.happycapy/agents/test')
+  })
+
+  it('正常路径时为 4 个框架文件各调用 outputFile 一次', async () => {
+    const fsExtra = (await import('fs-extra')).default
+    await writeAgentFiles('/home/user/.happycapy/agents/test', {
+      agentId: 'test',
+      agentName: 'Test Agent',
+      model: 'claude-sonnet',
+      installDate: '2026-03-24',
+    })
+    expect(fsExtra.outputFile).toHaveBeenCalledTimes(4)
+  })
+
+  it('写入内容中不存在未替换的 {{agent_id}} 占位符', async () => {
+    const fsExtra = (await import('fs-extra')).default
+    await writeAgentFiles('/home/user/.happycapy/agents/bmad-expert', {
+      agentId: 'bmad-expert',
+      agentName: 'BMAD Expert',
+      model: '',
+      installDate: '2026-03-24',
+    })
+    // mock readFile 返回 'Hello {{agent_id}} on {{install_date}}'
+    // 替换后应为 'Hello bmad-expert on 2026-03-24'
+    const calls = fsExtra.outputFile.mock.calls
+    for (const [, content] of calls) {
+      expect(content).not.toContain('{{agent_id}}')
+      expect(content).not.toContain('{{install_date}}')
+    }
+  })
+})
