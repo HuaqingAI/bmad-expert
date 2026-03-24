@@ -177,9 +177,10 @@ export async function detectPlatform() {}
 export async function install(options) {}
 ```
 
-**agent/ 占位文件内容**（最小化，后续故事替换为完整模板）
+**agent/ 占位文件内容**（最小化，仅建立占位与变量入口；后续故事补齐最终模板内容）
 ```markdown
-<!-- PLACEHOLDER: Story 4.x 将替换此文件为完整模板 -->
+<!-- PLACEHOLDER: Story 2.2 will wire template variables and install-time replacement. -->
+<!-- Story 4.1/4.2 will replace this placeholder with the final session-startup / bootstrap template. -->
 <!-- Template variables: {{agent_id}}, {{agent_name}}, {{install_date}} -->
 ```
 
@@ -270,7 +271,7 @@ bmad-expert/
 
 - 本故事是所有后续故事的基础，**必须先完成**，其他故事直接在此目录结构上落代码
 - `lib/adapters/` 目录结构支持平台适配器接口契约（Story 2.1 开始实现）
-- `agent/` 目录中的占位文件在 Story 2.2 替换为带变量的完整模板
+- `agent/` 目录中的占位文件在 Story 1.1 仅负责占位与变量入口；Story 2.2 负责模板变量替换与写入链路，Story 4.1/4.2 负责补齐最终的会话启动与 BOOTSTRAP 模板内容
 - `.github/workflows/` 目录在 Story 1.4 添加 CI/CD 配置
 - Growth 阶段命令（update/status）在 cli.js 中以空 action 占位，不实现逻辑
 
