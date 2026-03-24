@@ -403,9 +403,22 @@ async function writeAgentFiles(targetPath, files) {
 }
 
 // ✅ 正确：在 cli.js 顶层统一捕获并格式化输出
+const CODE_TO_EXIT = {
+  E001: EXIT_CODES.GENERAL_ERROR,
+  E002: EXIT_CODES.INVALID_ARGS,
+  E003: EXIT_CODES.MISSING_DEPENDENCY,
+  E004: EXIT_CODES.PERMISSION_DENIED,
+  E005: EXIT_CODES.NETWORK_ERROR,
+  E006: EXIT_CODES.ALREADY_INSTALLED,
+}
+
 program.parseAsync().catch(err => {
-  outputError(err)
-  process.exit(err.bmadCode ? EXIT_CODES[err.bmadCode] : EXIT_CODES.GENERAL_ERROR)
+  printError(err)
+  process.exit(
+    err instanceof BmadError
+      ? (CODE_TO_EXIT[err.bmadCode] ?? EXIT_CODES.GENERAL_ERROR)
+      : EXIT_CODES.GENERAL_ERROR
+  )
 })
 
 // ❌ 错误：在 lib 中直接 console.error 并 process.exit
