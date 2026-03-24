@@ -1,6 +1,6 @@
 # Story 1.1: npm 包初始化与完整项目结构搭建
 
-Status: review
+Status: done
 
 ## Story
 
