@@ -1,0 +1,119 @@
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { printProgress, printSuccess, printError } from '../lib/output.js'
+import { BmadError } from '../lib/errors.js'
+
+describe('output.js', () => {
+  let stdoutSpy, stderrSpy
+
+  beforeEach(() => {
+    stdoutSpy = vi.spyOn(process.stdout, 'write').mockImplementation(() => true)
+    stderrSpy = vi.spyOn(process.stderr, 'write').mockImplementation(() => true)
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  describe('printProgress', () => {
+    it('写入 stdout，不写 stderr', () => {
+      printProgress('正在检测平台...')
+      expect(stdoutSpy).toHaveBeenCalled()
+      expect(stderrSpy).not.toHaveBeenCalled()
+    })
+
+    it('非完成态输出包含消息文本', () => {
+      printProgress('正在检测平台...')
+      const written = stdoutSpy.mock.calls[0][0]
+      expect(written).toContain('正在检测平台...')
+    })
+
+    it('完成态（done=true）输出包含 ✓', () => {
+      printProgress('正在检测平台...', true)
+      const written = stdoutSpy.mock.calls[0][0]
+      expect(written).toContain('✓')
+    })
+
+    it('完成态写入 stdout，不写 stderr', () => {
+      printProgress('正在检测平台...', true)
+      expect(stdoutSpy).toHaveBeenCalled()
+      expect(stderrSpy).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('printSuccess', () => {
+    it('写入 stdout，不写 stderr', () => {
+      printSuccess('安装完成')
+      expect(stdoutSpy).toHaveBeenCalled()
+      expect(stderrSpy).not.toHaveBeenCalled()
+    })
+
+    it('输出包含消息文本', () => {
+      printSuccess('bmad-expert 已就绪')
+      const written = stdoutSpy.mock.calls[0][0]
+      expect(written).toContain('bmad-expert 已就绪')
+    })
+  })
+
+  describe('printError', () => {
+    it('BmadError 写入 stderr，不写 stdout', () => {
+      const err = new BmadError('E004', '文件写入失败', new Error('EACCES'))
+      printError(err)
+      expect(stderrSpy).toHaveBeenCalled()
+      expect(stdoutSpy).not.toHaveBeenCalled()
+    })
+
+    it('stderr 包含错误码', () => {
+      const err = new BmadError('E004', '文件写入失败', new Error('EACCES'))
+      printError(err)
+      const written = stderrSpy.mock.calls.map(c => c[0]).join('')
+      expect(written).toContain('ERROR [E004]')
+    })
+
+    it('stderr 包含错误消息', () => {
+      const err = new BmadError('E004', '文件写入失败', new Error('EACCES'))
+      printError(err)
+      const written = stderrSpy.mock.calls.map(c => c[0]).join('')
+      expect(written).toContain('文件写入失败')
+    })
+
+    it('retryable=true 时输出"可重试：是"', () => {
+      const err = new BmadError('E004', '文件写入失败', new Error('EACCES'))
+      printError(err)
+      const written = stderrSpy.mock.calls.map(c => c[0]).join('')
+      expect(written).toContain('可重试：是')
+    })
+
+    it('retryable=false 时输出"可重试：否"', () => {
+      const err = new BmadError('E002', '参数无效', null)
+      printError(err)
+      const written = stderrSpy.mock.calls.map(c => c[0]).join('')
+      expect(written).toContain('可重试：否')
+    })
+
+    it('stderr 包含"原因："字段', () => {
+      const err = new BmadError('E004', '文件写入失败', new Error('EACCES: permission denied'))
+      printError(err)
+      const written = stderrSpy.mock.calls.map(c => c[0]).join('')
+      expect(written).toContain('原因：')
+    })
+
+    it('cause 为 null 时不报错，原因显示"未知原因"', () => {
+      const err = new BmadError('E001', '通用错误', null)
+      expect(() => printError(err)).not.toThrow()
+      const written = stderrSpy.mock.calls.map(c => c[0]).join('')
+      expect(written).toContain('未知原因')
+    })
+
+    it('普通 Error 也写入 stderr，不写 stdout', () => {
+      printError(new Error('普通错误'))
+      expect(stderrSpy).toHaveBeenCalled()
+      expect(stdoutSpy).not.toHaveBeenCalled()
+    })
+
+    it('普通 Error 输出包含错误消息', () => {
+      printError(new Error('普通错误'))
+      const written = stderrSpy.mock.calls.map(c => c[0]).join('')
+      expect(written).toContain('普通错误')
+    })
+  })
+})
