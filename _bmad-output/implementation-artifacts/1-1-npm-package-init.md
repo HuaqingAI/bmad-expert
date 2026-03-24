@@ -16,7 +16,7 @@ so that 后续所有故事可以在确定的技术基础上直接落地代码，
 
 2. **Given** `package.json` 已创建
    **When** 检查其内容
-   **Then** 包含：`"type": "module"`、`"bin": {"bmad-expert": "./cli.js"}`、精确版本运行依赖（commander@14.0.3、execa@9.6.1、fs-extra@11.3.4、chalk@5.6.2）、精确版本开发依赖（vitest@4.1.1、eslint、prettier）；还包含 `"engines": {"node": ">=18.0.0"}`；以及 `"bmadExpert"` 文件分层配置字段
+   **Then** 包含：`"type": "module"`、`"bin": {"bmad-expert": "./cli.js"}`、精确版本运行依赖（commander@14.0.3、execa@9.6.1、fs-extra@11.3.4、chalk@5.6.2）、精确版本开发依赖（vitest@4.1.1、eslint、prettier）；还包含 `"engines": {"node": ">=20.19.0"}`；以及 `"bmadExpert"` 文件分层配置字段
 
 3. **Given** `package-lock.json` 已生成
    **When** 检查所有依赖条目
@@ -59,7 +59,7 @@ so that 后续所有故事可以在确定的技术基础上直接落地代码，
   - [x] 验证 `node cli.js --help` 正常输出
 
 - [x] 创建代码质量配置文件 (AC: #4)
-  - [x] 创建 `eslint.config.js`（ESLint 9+ flat config，eslint:recommended + es2022 + Node 18+ globals）
+  - [x] 创建 `eslint.config.js`（ESLint 9+ flat config，eslint:recommended + es2022 + Node 20.19+ globals）
   - [x] 创建 `.prettierrc`（singleQuote: true, semi: false, printWidth: 100）
   - [x] 创建 `vitest.config.js`（配置 ESM 支持，passWithNoTests: true，测试文件模式 test/**/*.test.js）
   - [x] 创建 `.gitignore`（node_modules/、*.log、.DS_Store、coverage/、dist/）
@@ -106,7 +106,7 @@ so that 后续所有故事可以在确定的技术基础上直接落地代码，
     "bmad-expert": "./cli.js"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=20.19.0"
   },
   "scripts": {
     "test": "vitest run",
@@ -195,7 +195,7 @@ export default defineConfig({
 })
 ```
 
-**`.eslintrc.js` 配置**（ESM 格式，Commander v14 + Node 18+）
+**`.eslintrc.js` 配置**（ESM 格式，Commander v14 + Node 20.19+）
 ```javascript
 export default [
   {
