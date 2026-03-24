@@ -1,0 +1,40 @@
+{
+  "name": "bmad-expert",
+  "version": "0.1.0",
+  "description": "BMAD Agent 安装器与新手教练 - 一条命令完成跨平台 BMAD 安装",
+  "type": "module",
+  "bin": {
+    "bmad-expert": "./cli.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "lint": "eslint .",
+    "format": "prettier --write ."
+  },
+  "keywords": [
+    "bmad",
+    "agent",
+    "installer",
+    "happycapy",
+    "claude"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "chalk": "5.6.2",
+    "commander": "14.0.3",
+    "execa": "9.6.1",
+    "fs-extra": "11.3.4"
+  },
+  "devDependencies": {
+    "eslint": "9.24.0",
+    "prettier": "3.5.3",
+    "vitest": "4.1.1"
+  },
+  "bmadExpert": {
+    "frameworkFiles": ["SOUL.md", "IDENTITY.md", "AGENTS.md", "BOOTSTRAP.md"],
+    "userDataPaths": ["MEMORY.md", "USER.md", "memory/"]
+  }
+}
