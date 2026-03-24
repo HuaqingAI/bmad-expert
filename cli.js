@@ -3,6 +3,9 @@ import { Command } from 'commander'
 import { readFileSync } from 'fs'
 import { fileURLToPath } from 'url'
 import { dirname, join } from 'path'
+import { EXIT_CODES } from './lib/exit-codes.js'
+import { BmadError } from './lib/errors.js'
+import { printError } from './lib/output.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const pkg = JSON.parse(readFileSync(join(__dirname, 'package.json'), 'utf8'))
@@ -41,7 +44,20 @@ program
     // TODO: Story 6.2 实现
   })
 
+const CODE_TO_EXIT = {
+  E001: EXIT_CODES.GENERAL_ERROR,
+  E002: EXIT_CODES.INVALID_ARGS,
+  E003: EXIT_CODES.MISSING_DEPENDENCY,
+  E004: EXIT_CODES.PERMISSION_DENIED,
+  E005: EXIT_CODES.NETWORK_ERROR,
+  E006: EXIT_CODES.ALREADY_INSTALLED,
+}
+
 program.parseAsync().catch(err => {
-  process.stderr.write(`${err.message}\n`)
-  process.exit(1)
+  printError(err)
+  if (err instanceof BmadError) {
+    process.exit(CODE_TO_EXIT[err.bmadCode] ?? EXIT_CODES.GENERAL_ERROR)
+  } else {
+    process.exit(EXIT_CODES.GENERAL_ERROR)
+  }
 })
