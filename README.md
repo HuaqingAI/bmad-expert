@@ -1,5 +1,8 @@
 # BMAD Expert — HappyCapy Agent
 
+[![npm version](https://img.shields.io/npm/v/bmad-expert)](https://www.npmjs.com/package/bmad-expert)
+[![CI](https://github.com/HuaqingAI/bmad-expert/actions/workflows/ci.yml/badge.svg)](https://github.com/HuaqingAI/bmad-expert/actions/workflows/ci.yml)
+
 A [HappyCapy](https://happycapy.ai) agent specialized in **BMAD-METHOD** workflow guidance and execution.
 
 ## What is BMAD Expert?
@@ -20,6 +23,11 @@ It assumes you've already decided to use BMAD. Its job is to help you use it wel
 | Research | Domain, market, and technical research |
 | Project Management | Sprint planning, Sprint status, Retrospectives |
 | Documentation | Project context, Index docs |
+
+## npm 包发布说明
+
+> **重要：** 发布前需确认 `bmad-expert` 包名在 npm 公开注册表中可用。
+> 执行 `npm view bmad-expert` 检查，若已被占用请提前选定备用包名并更新 `package.json`、`bin` 字段及文档中所有引用。
 
 ## Installation
 
