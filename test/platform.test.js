@@ -43,14 +43,12 @@ describe('lib/platform.js', () => {
       expect(result).toBe('happycapy')
     })
 
-    it('platformOverride 为 cursor 时直接返回', async () => {
-      const result = await detectPlatform('cursor')
-      expect(result).toBe('cursor')
+    it('platformOverride 为 cursor 时 throw BmadError(E002)（Phase 1.5 未实现）', async () => {
+      await expect(detectPlatform('cursor')).rejects.toMatchObject({ bmadCode: 'E002' })
     })
 
-    it('platformOverride 为 claude-code 时直接返回', async () => {
-      const result = await detectPlatform('claude-code')
-      expect(result).toBe('claude-code')
+    it('platformOverride 为 claude-code 时 throw BmadError(E002)（Phase 1.5 未实现）', async () => {
+      await expect(detectPlatform('claude-code')).rejects.toMatchObject({ bmadCode: 'E002' })
     })
 
     it('platformOverride 非法时 throw BmadError，bmadCode 为 E002', async () => {
@@ -181,15 +179,38 @@ describe('lib/adapters/happycapy.js', () => {
       expect(result).toContain('my-agent')
     })
 
-    it('agentId 包含 .. 路径遍历时 throw BmadError(E004)', () => {
-      expect(() => getInstallPath('../evil')).toThrow(BmadError)
-      expect(() => getInstallPath('../evil')).toThrow(
+    it('空字符串 agentId throw BmadError(E004)', () => {
+      expect(() => getInstallPath('')).toThrow(
         expect.objectContaining({ bmadCode: 'E004' })
       )
     })
 
-    it('agentId 包含绝对路径遍历时 throw BmadError(E004)', () => {
-      expect(() => getInstallPath('../../etc/passwd')).toThrow(
+    it('"." agentId throw BmadError(E004)', () => {
+      expect(() => getInstallPath('.')).toThrow(
+        expect.objectContaining({ bmadCode: 'E004' })
+      )
+    })
+
+    it('".." agentId throw BmadError(E004)', () => {
+      expect(() => getInstallPath('..')).toThrow(
+        expect.objectContaining({ bmadCode: 'E004' })
+      )
+    })
+
+    it('含路径分隔符的 agentId（foo/bar）throw BmadError(E004)', () => {
+      expect(() => getInstallPath('foo/bar')).toThrow(
+        expect.objectContaining({ bmadCode: 'E004' })
+      )
+    })
+
+    it('含反斜杠的 agentId throw BmadError(E004)', () => {
+      expect(() => getInstallPath('foo\\bar')).toThrow(
+        expect.objectContaining({ bmadCode: 'E004' })
+      )
+    })
+
+    it('agentId 含 .. 的路径遍历 throw BmadError(E004)', () => {
+      expect(() => getInstallPath('../evil')).toThrow(
         expect.objectContaining({ bmadCode: 'E004' })
       )
     })
