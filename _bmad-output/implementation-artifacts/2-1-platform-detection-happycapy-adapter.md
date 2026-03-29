@@ -1,6 +1,6 @@
 # Story 2.1: 平台检测模块（platform.js）与 HappyCapy 适配器骨架
 
-Status: ready-for-dev
+Status: review
 
 ## Story
 
@@ -28,54 +28,54 @@ so that 安装流程在最早阶段确定目标平台，后续所有路径计算
 
 ## Tasks / Subtasks
 
-- [ ] 实现 `lib/platform.js` — detectPlatform 函数 (AC: #1, #2)
-  - [ ] 替换占位内容，实现完整 `detectPlatform(platformOverride = null)` 函数
-  - [ ] 支持 `SUPPORTED_PLATFORMS = ['happycapy', 'cursor', 'claude-code']` 验证
-  - [ ] platformOverride 非 null 时：验证值在白名单内，否则 throw BmadError('E002', ...)，合法则直接返回
-  - [ ] 无 override 时：按顺序调用 `happycapyAdapter.detect()`，返回第一个匹配平台名
-  - [ ] 所有平台均未检测到时：throw BmadError('E002', '无法自动检测到支持的平台，请使用 --platform 参数指定')
-  - [ ] 导出 `getAdapter(platformName)` 工厂函数，返回对应适配器对象（仅 happycapy 本 sprint 实现）
-  - [ ] 具名导出，禁止 default export
+- [x] 实现 `lib/platform.js` — detectPlatform 函数 (AC: #1, #2)
+  - [x] 替换占位内容，实现完整 `detectPlatform(platformOverride = null)` 函数
+  - [x] 支持 `SUPPORTED_PLATFORMS = ['happycapy', 'cursor', 'claude-code']` 验证
+  - [x] platformOverride 非 null 时：验证值在白名单内，否则 throw BmadError('E002', ...)，合法则直接返回
+  - [x] 无 override 时：按顺序调用 `happycapyAdapter.detect()`，返回第一个匹配平台名
+  - [x] 所有平台均未检测到时：throw BmadError('E002', '无法自动检测到支持的平台，请使用 --platform 参数指定')
+  - [x] 导出 `getAdapter(platformName)` 工厂函数，返回对应适配器对象（仅 happycapy 本 sprint 实现）
+  - [x] 具名导出，禁止 default export
 
-- [ ] 实现 `lib/adapters/happycapy.js` — detect() (AC: #1)
-  - [ ] 替换占位内容，实现完整适配器
-  - [ ] `detect()` 方法：先检查 `process.env.CAPY_USER_ID`（非 undefined 即 HappyCapy），再尝试 execa 执行 `happycapy-cli --version`（timeout: 3000ms）
-  - [ ] 任一条件满足返回 `true`，两者均失败返回 `false`
-  - [ ] 检测总耗时 ≤3 秒（先 env var，execa 设置 timeout）
+- [x] 实现 `lib/adapters/happycapy.js` — detect() (AC: #1)
+  - [x] 替换占位内容，实现完整适配器
+  - [x] `detect()` 方法：先检查 `process.env.CAPY_USER_ID`（truthy 检查，比 !== undefined 更健壮），再尝试 execa 执行 `happycapy-cli --version`（timeout: 3000ms）
+  - [x] 任一条件满足返回 `true`，两者均失败返回 `false`
+  - [x] 检测总耗时 ≤3 秒（先 env var，execa 设置 timeout）
 
-- [ ] 实现 `lib/adapters/happycapy.js` — getInstallPath() (AC: #3)
-  - [ ] `getInstallPath(agentId)` 使用 `os.homedir()` 构建路径，不可硬编码
-  - [ ] 路径格式：`path.join(os.homedir(), '.happycapy', 'agents', agentId)`
-  - [ ] 路径安全验证：断言路径以 `path.join(os.homedir(), '.happycapy', 'agents')` 开头，不包含 `..`
-  - [ ] 违规路径 throw BmadError('E004', '非法安装路径：路径遍历被拒绝')
+- [x] 实现 `lib/adapters/happycapy.js` — getInstallPath() (AC: #3)
+  - [x] `getInstallPath(agentId)` 使用 `os.homedir()` 构建路径，不可硬编码
+  - [x] 路径格式：`path.join(os.homedir(), '.happycapy', 'agents', agentId)`
+  - [x] 路径安全验证：断言路径以 `path.join(os.homedir(), '.happycapy', 'agents')` 开头，不包含 `..`
+  - [x] 违规路径 throw BmadError('E004', '非法安装路径：路径遍历被拒绝')
 
-- [ ] 实现 `lib/adapters/happycapy.js` — check() (AC: 为 Story 2.3 铺路)
-  - [ ] `check(agentId)` 使用 fs-extra（不是原生 fs）检查安装状态
-  - [ ] 目标路径不存在 → 返回 `'not_installed'`
-  - [ ] 目标路径存在且包含 `AGENTS.md` → 返回 `'installed'`
-  - [ ] 目标路径存在但缺少 `AGENTS.md` → 返回 `'corrupted'`
-  - [ ] 检测耗时 ≤3 秒（NFR3）
+- [x] 实现 `lib/adapters/happycapy.js` — check() (AC: 为 Story 2.3 铺路)
+  - [x] `check(agentId)` 使用 fs-extra（不是原生 fs）检查安装状态
+  - [x] 目标路径不存在 → 返回 `'not_installed'`
+  - [x] 目标路径存在且包含 `AGENTS.md` → 返回 `'installed'`
+  - [x] 目标路径存在但缺少 `AGENTS.md` → 返回 `'corrupted'`
+  - [x] 检测耗时 ≤3 秒（NFR3）
 
-- [ ] 实现 `lib/adapters/happycapy.js` — install() 接口骨架 (为 Story 2.4 预留)
-  - [ ] `install(files, options)` 方法：当前 story 实现为占位骨架
-  - [ ] 签名：`async install(files, options = {})` 其中 files 为文件内容映射对象，options 含 agentId
-  - [ ] 骨架注释注明：完整实现由 Story 2.4 填充（文件写入 + happycapy-cli add 注册）
-  - [ ] 确保函数可被调用（不 throw），但 Story 2.4 前实际为空实现
+- [x] 实现 `lib/adapters/happycapy.js` — install() 接口骨架 (为 Story 2.4 预留)
+  - [x] `install(files, options)` 方法：当前 story 实现为占位骨架
+  - [x] 签名：`async install(files, options = {})` 其中 files 为文件内容映射对象，options 含 agentId
+  - [x] 骨架注释注明：完整实现由 Story 2.4 填充（文件写入 + happycapy-cli add 注册）
+  - [x] 确保函数可被调用（不 throw），但 Story 2.4 前实际为空实现
 
-- [ ] 创建 `test/platform.test.js` (AC: #4)
-  - [ ] 测试 `detectPlatform()` 无 override 时，mock `CAPY_USER_ID` 环境变量为非 undefined 值，返回 `'happycapy'`
-  - [ ] 测试 `detectPlatform('happycapy')` override，返回 `'happycapy'`
-  - [ ] 测试 `detectPlatform('invalid-platform')` throw BmadError，bmadCode 为 `'E002'`
-  - [ ] 测试 `getInstallPath('bmad-expert')` 返回路径包含 `.happycapy/agents/bmad-expert`
-  - [ ] 测试 `getInstallPath` 使用 `..` 非法 agentId 时 throw BmadError('E004')
-  - [ ] 测试 `detect()` — mock `CAPY_USER_ID` 设为非 undefined，返回 true
-  - [ ] 测试 `detect()` — unset `CAPY_USER_ID` 且 mock execa 调用失败，返回 false
-  - [ ] 测试 `check()` — mock fs-extra，不存在时返回 `'not_installed'`，完整时返回 `'installed'`，缺文件时返回 `'corrupted'`
-  - [ ] 所有 mock 使用 vitest 的 `vi.stubEnv()` / `vi.spyOn()` / `vi.mock()`，afterEach 恢复
+- [x] 创建 `test/platform.test.js` (AC: #4)
+  - [x] 测试 `detectPlatform()` 无 override 时，mock `CAPY_USER_ID` 环境变量为非 undefined 值，返回 `'happycapy'`
+  - [x] 测试 `detectPlatform('happycapy')` override，返回 `'happycapy'`
+  - [x] 测试 `detectPlatform('invalid-platform')` throw BmadError，bmadCode 为 `'E002'`
+  - [x] 测试 `getInstallPath('bmad-expert')` 返回路径包含 `.happycapy/agents/bmad-expert`
+  - [x] 测试 `getInstallPath` 使用 `..` 非法 agentId 时 throw BmadError('E004')
+  - [x] 测试 `detect()` — mock `CAPY_USER_ID` 设为非 undefined，返回 true
+  - [x] 测试 `detect()` — unset `CAPY_USER_ID` 且 mock execa 调用失败，返回 false
+  - [x] 测试 `check()` — mock fs-extra，不存在时返回 `'not_installed'`，完整时返回 `'installed'`，缺文件时返回 `'corrupted'`
+  - [x] 所有 mock 使用 vitest 的 `vi.stubEnv()` / `vi.mock()`，afterEach 恢复
 
-- [ ] 验证所有测试通过 (AC: #4)
-  - [ ] 执行 `npm test`，platform.test.js 全部通过
-  - [ ] 已有测试（errors.test.js、exit-codes.test.js、output.test.js）无回归
+- [x] 验证所有测试通过 (AC: #4)
+  - [x] 执行 `npm test`，platform.test.js 全部通过（4 文件 / 61 测试全绿）
+  - [x] 已有测试（errors.test.js、exit-codes.test.js、output.test.js）无回归
 
 ## Dev Notes
 
@@ -590,6 +590,25 @@ claude-sonnet-4-6
 
 ### Debug Log References
 
+无调试问题。实现按故事规格一次通过，61 个测试全绿。
+
 ### Completion Notes List
 
+- ✅ 实现 `lib/platform.js`：`detectPlatform(platformOverride?)` 支持 override 验证和自动检测循环；`getAdapter(platformName)` 工厂函数返回适配器；`SUPPORTED_PLATFORMS` 常量导出；全具名导出
+- ✅ 实现 `lib/adapters/happycapy.js`：
+  - `detect()`：优先检查 `CAPY_USER_ID` truthy（比 `!== undefined` 更健壮，避免 process.env 字符串化问题），fallback 到 `execa('happycapy-cli', ['--version'], { timeout: 3000 })`
+  - `getInstallPath(agentId)`：`path.join(os.homedir(), '.happycapy', 'agents', agentId)` + `path.resolve` 路径白名单验证，非法路径 throw BmadError('E004')
+  - `check(agentId)`：`fs-extra.pathExists` 检查目录和 AGENTS.md，返回三态
+  - `install()`：Story 2.4 占位骨架，`void files; void options` 避免 lint 警告
+- ✅ 创建 `test/platform.test.js`：32 个测试覆盖 detectPlatform、getAdapter、detect、getInstallPath、check、install；使用 `vi.mock('execa')`、`vi.mock('fs-extra')`、`vi.stubEnv` 隔离 I/O 和环境变量
+- ✅ 测试结果：4 文件 / 61 测试全绿，无回归（errors、exit-codes、output 测试全部通过）
+
 ### File List
+
+- `lib/platform.js` (modified — 替换占位实现)
+- `lib/adapters/happycapy.js` (modified — 替换占位实现)
+- `test/platform.test.js` (new — 32 个测试)
+
+### Change Log
+
+- 2026-03-24: Story 2.1 实现完成 — platform.js + happycapy 适配器 + 测试（claude-sonnet-4-6）
