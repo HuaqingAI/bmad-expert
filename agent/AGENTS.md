@@ -3,7 +3,7 @@
 
 # AGENTS.md
 
-This file was installed by bmad-expert ({{agent_id}}) on {{install_date}}.
+This file was installed by {{agent_name}} ({{agent_id}}) on {{install_date}}.
 
 ## Session Startup
 

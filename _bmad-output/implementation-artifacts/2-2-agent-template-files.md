@@ -1,6 +1,6 @@
 # Story 2.2: agent 模板文件集与变量替换引擎
 
-Status: ready-for-dev
+Status: review
 
 ## Story
 
@@ -26,39 +26,39 @@ so that 安装时 `{{agent_id}}`、`{{agent_name}}`、`{{model}}`、`{{install_d
 
 ## Tasks / Subtasks
 
-- [ ] 实现 `replaceTemplateVars(content, vars)` 具名导出函数 (AC: #1)
-  - [ ] 在 `lib/installer.js` 中实现，替换占位内容（勿删架构注释）
-  - [ ] 支持 4 个变量：`{{agent_id}}` → `agentId`、`{{agent_name}}` → `agentName`、`{{model}}` → `model`、`{{install_date}}` → `installDate`
-  - [ ] 对变量值为空字符串时替换为空字符串（不报错，不保留占位符）
-  - [ ] 使用全局正则（`/\{\{agent_id\}\}/g`），不使用 `String.prototype.replaceAll`（ESM 兼容性更好）
-  - [ ] 具名导出：`export function replaceTemplateVars(content, vars) {}`
+- [x] 实现 `replaceTemplateVars(content, vars)` 具名导出函数 (AC: #1)
+  - [x] 在 `lib/installer.js` 中实现，替换占位内容（勿删架构注释）
+  - [x] 支持 4 个变量：`{{agent_id}}` → `agentId`、`{{agent_name}}` → `agentName`、`{{model}}` → `model`、`{{install_date}}` → `installDate`
+  - [x] 对变量值为空字符串时替换为空字符串（不报错，不保留占位符）
+  - [x] 使用全局正则（`/\{\{agent_id\}\}/g`），不使用 `String.prototype.replaceAll`（ESM 兼容性更好）
+  - [x] 具名导出：`export function replaceTemplateVars(content, vars) {}`
 
-- [ ] 实现 `writeAgentFiles(targetDir, vars)` 具名导出函数 (AC: #2)
-  - [ ] 路径安全检查：`targetDir` 包含 `..` 时抛出 `BmadError('E004', '路径不安全：包含路径遍历 (..)', null)`
-  - [ ] 使用 ESM `__dirname` 等价方案计算 `agent/` 模板目录路径（见 Dev Notes）
-  - [ ] 使用 `fs-extra` 的 `ensureDir(targetDir)` 确保目录存在
-  - [ ] 遍历 `FRAMEWORK_FILES = ['SOUL.md', 'IDENTITY.md', 'AGENTS.md', 'BOOTSTRAP.md']`
-  - [ ] 每个文件：`readFile(templatePath, 'utf8')` → `replaceTemplateVars(content, vars)` → `outputFile(destPath, replaced, 'utf8')`
-  - [ ] 导入 `BmadError` from `'./errors.js'`（相对路径）
-  - [ ] 使用 `import fsExtra from 'fs-extra'` 再解构（ESM 兼容写法，见 Dev Notes）
+- [x] 实现 `writeAgentFiles(targetDir, vars)` 具名导出函数 (AC: #2)
+  - [x] 路径安全检查：`targetDir` 包含 `..` 时抛出 `BmadError('E004', '路径不安全：包含路径遍历 (..)', null)`
+  - [x] 使用 ESM `__dirname` 等价方案计算 `agent/` 模板目录路径（见 Dev Notes）
+  - [x] 使用 `fs-extra` 的 `ensureDir(targetDir)` 确保目录存在
+  - [x] 遍历 `FRAMEWORK_FILES = ['SOUL.md', 'IDENTITY.md', 'AGENTS.md', 'BOOTSTRAP.md']`
+  - [x] 每个文件：`readFile(templatePath, 'utf8')` → `replaceTemplateVars(content, vars)` → `outputFile(destPath, replaced, 'utf8')`
+  - [x] 导入 `BmadError` from `'./errors.js'`（相对路径）
+  - [x] 使用 `import fsExtra from 'fs-extra'` 再解构（ESM 兼容写法，见 Dev Notes）
 
-- [ ] 确认 `agent/` 模板文件包含必要的 `{{variable}}` 占位符 (AC: #1 前提)
-  - [ ] 检查 SOUL.md、IDENTITY.md、AGENTS.md、BOOTSTRAP.md 是否含 `{{agent_id}}`、`{{agent_name}}`、`{{install_date}}`
-  - [ ] 若当前占位文件缺失这些变量，补充到适当位置（如文件头注释或正文）
-  - [ ] **不需要补充最终模板内容**（Story 4.1 负责 AGENTS.md 会话检测逻辑，Story 4.2 负责 BOOTSTRAP.md 自毁机制）
+- [x] 确认 `agent/` 模板文件包含必要的 `{{variable}}` 占位符 (AC: #1 前提)
+  - [x] 检查 SOUL.md、IDENTITY.md、AGENTS.md、BOOTSTRAP.md 是否含 `{{agent_id}}`、`{{agent_name}}`、`{{install_date}}`
+  - [x] 若当前占位文件缺失这些变量，补充到适当位置（AGENTS.md 和 BOOTSTRAP.md 正文中补充了 `{{agent_name}}`）
+  - [x] **不需要补充最终模板内容**（Story 4.1 负责 AGENTS.md 会话检测逻辑，Story 4.2 负责 BOOTSTRAP.md 自毁机制）
 
-- [ ] 创建 `test/installer.test.js` (AC: #3)
-  - [ ] 导入：`import { replaceTemplateVars, writeAgentFiles } from '../lib/installer.js'`
-  - [ ] 测试 `replaceTemplateVars` 正常替换（4 个变量全替换，无残留 `{{...}}`）
-  - [ ] 测试空值处理（`agentId: ''` → 空字符串替换，不报错）
-  - [ ] 测试特殊字符（`agentName` 含 `$`、`\`、括号等，不产生 regex 副作用）
-  - [ ] 测试 `writeAgentFiles` 路径含 `..` 时抛出 `BmadError`（不依赖 fs-extra mock 即可测试此分支）
-  - [ ] 测试 `writeAgentFiles` 正常写入时调用 fs-extra 的 `ensureDir` 和 `outputFile`（使用 `vi.mock('fs-extra', ...)`）
-  - [ ] `vi.mock()` 放在文件顶部，mock 模式参见 Dev Notes
+- [x] 创建 `test/installer.test.js` (AC: #3)
+  - [x] 导入：`import { replaceTemplateVars, writeAgentFiles } from '../lib/installer.js'`
+  - [x] 测试 `replaceTemplateVars` 正常替换（4 个变量全替换，无残留 `{{...}}`）
+  - [x] 测试空值处理（`agentId: ''` → 空字符串替换，不报错）
+  - [x] 测试特殊字符（`agentName` 含 `$`、`$&` 等，不产生 regex 副作用）
+  - [x] 测试 `writeAgentFiles` 路径含 `..` 时抛出 `BmadError`（不依赖 fs-extra mock 即可测试此分支）
+  - [x] 测试 `writeAgentFiles` 正常写入时调用 fs-extra 的 `ensureDir` 和 `outputFile`（使用 `vi.mock('fs-extra', ...)`）
+  - [x] `vi.mock()` 放在文件顶部，mock 模式参见 Dev Notes
 
-- [ ] 验证所有测试通过 (AC: #3)
-  - [ ] 执行 `npm test`，确认 `test/installer.test.js` 全部通过
-  - [ ] 确认已有测试（errors.test.js、exit-codes.test.js、output.test.js）无回归
+- [x] 验证所有测试通过 (AC: #3)
+  - [x] 执行 `npm test`，确认 `test/installer.test.js` 全部通过（12 个新测试）
+  - [x] 确认已有测试（errors.test.js、exit-codes.test.js、output.test.js）无回归（33 个已有测试全通过）
 
 ## Dev Notes
 
@@ -329,10 +329,26 @@ bmad-expert/
 
 ### Agent Model Used
 
-_（由执行此故事的 dev agent 填写）_
+claude-sonnet-4-6
 
 ### Debug Log References
 
+- `replaceTemplateVars` 使用函数形式 replacement（`() => value`）而非字符串，防止 `$&`、`$'`、`$2` 等特殊字符在 `String.prototype.replace` 中被解释为特殊 pattern（测试 `变量值含 $& 特殊字符时不扩展为匹配子串` 验证此行为）
+- fs-extra v11 ESM 导入使用默认导入再解构：`import fsExtra from 'fs-extra'; const { ensureDir, readFile, outputFile } = fsExtra`
+- ESM 中通过 `fileURLToPath(import.meta.url)` + `dirname()` 替代 `__dirname`
+- AGENTS.md 和 BOOTSTRAP.md 正文中原先缺少 `{{agent_name}}`（仅存在于注释），Task 3 补充后四个文件均在正文包含三个必要变量
+
 ### Completion Notes List
 
+- ✅ AC#1：`replaceTemplateVars(content, vars)` 实现并通过 7 个单元测试，支持 4 变量替换、空值处理、特殊字符安全、未知占位符保留
+- ✅ AC#2：`writeAgentFiles(targetDir, vars)` 实现并通过 5 个单元测试，路径安全验证（`..` 遍历拒绝）、fs-extra 文件写入
+- ✅ AC#3：`test/installer.test.js` 创建，12 个测试全部通过；45 个测试套件零回归
+- ✅ `agent/AGENTS.md` 和 `agent/BOOTSTRAP.md` 正文补充了 `{{agent_name}}` 占位符
+- ✅ 所有架构守则遵守：fs-extra、BmadError、具名导出、async/await、无 console.log
+
 ### File List
+
+- lib/installer.js（修改：追加 replaceTemplateVars + writeAgentFiles，保留 install() 占位）
+- test/installer.test.js（新建：12 个测试覆盖变量替换与文件写入）
+- agent/AGENTS.md（修改：正文补充 `{{agent_name}}`）
+- agent/BOOTSTRAP.md（修改：正文补充 `{{agent_name}}`）
