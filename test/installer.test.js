@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { replaceTemplateVars, writeAgentFiles } from '../lib/installer.js'
+import { replaceTemplateVars, writeAgentFiles, checkInstallStatus } from '../lib/installer.js'
 import { BmadError } from '../lib/errors.js'
+import { printProgress } from '../lib/output.js'
 
 // mock fs-extra — vi.mock 被 vitest 自动 hoist 到文件顶部执行
 vi.mock('fs-extra', () => ({
@@ -9,6 +10,13 @@ vi.mock('fs-extra', () => ({
     readFile: vi.fn().mockResolvedValue('Hello {{agent_id}} on {{install_date}}'),
     outputFile: vi.fn().mockResolvedValue(undefined),
   },
+}))
+
+// mock output.js — 防止真实 stdout 输出影响测试结果
+vi.mock('../lib/output.js', () => ({
+  printProgress: vi.fn(),
+  printSuccess: vi.fn(),
+  printError: vi.fn(),
 }))
 
 // ─── replaceTemplateVars ───────────────────────────────────────────────────
@@ -173,5 +181,47 @@ describe('writeAgentFiles', () => {
       bmadCode: 'E004',
       cause: permissionError,
     })
+  })
+})
+
+// ─── checkInstallStatus ────────────────────────────────────────────────────
+
+describe('checkInstallStatus', () => {
+  let mockAdapter
+
+  beforeEach(() => {
+    mockAdapter = { check: vi.fn() }
+    vi.clearAllMocks()
+  })
+
+  it('status 为 installed 时抛出 BmadError 实例', async () => {
+    mockAdapter.check.mockResolvedValueOnce('installed')
+    await expect(checkInstallStatus(mockAdapter, 'bmad-expert')).rejects.toBeInstanceOf(BmadError)
+  })
+
+  it('status 为 installed 时抛出 bmadCode 为 E006 的错误', async () => {
+    mockAdapter.check.mockResolvedValueOnce('installed')
+    await expect(checkInstallStatus(mockAdapter, 'bmad-expert')).rejects.toMatchObject({
+      bmadCode: 'E006',
+    })
+  })
+
+  it('status 为 corrupted 时返回 { status: corrupted }，不抛出', async () => {
+    mockAdapter.check.mockResolvedValueOnce('corrupted')
+    const result = await checkInstallStatus(mockAdapter, 'bmad-expert')
+    expect(result).toMatchObject({ status: 'corrupted' })
+    expect(printProgress).toHaveBeenCalledWith('检测到安装损坏，将重新安装...')
+  })
+
+  it('status 为 not_installed 时返回 { status: not_installed }，不抛出', async () => {
+    mockAdapter.check.mockResolvedValueOnce('not_installed')
+    const result = await checkInstallStatus(mockAdapter, 'bmad-expert')
+    expect(result).toMatchObject({ status: 'not_installed' })
+  })
+
+  it('调用 adapter.check 时传入正确的 agentId', async () => {
+    mockAdapter.check.mockResolvedValueOnce('not_installed')
+    await checkInstallStatus(mockAdapter, 'my-custom-agent')
+    expect(mockAdapter.check).toHaveBeenCalledWith('my-custom-agent')
   })
 })
