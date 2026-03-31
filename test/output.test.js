@@ -52,6 +52,35 @@ describe('output.js', () => {
       const written = stdoutSpy.mock.calls[0][0]
       expect(written).toContain('bmad-expert 已就绪')
     })
+
+    it('安装后引导消息包含情感性确认（FR20）', () => {
+      const msg = `安装完成（用时 5s）\n\nbmad-expert 已就绪。现在你可以：\n  ① 说"初始化这个项目"开始使用\n  ② 说"进入 bmad-help"了解工作流`
+      printSuccess(msg)
+      const written = stdoutSpy.mock.calls[0][0]
+      expect(written).toContain('bmad-expert 已就绪')
+    })
+
+    it('安装后引导消息包含两个编号操作选项（FR21）', () => {
+      const msg = `安装完成（用时 5s）\n\nbmad-expert 已就绪。现在你可以：\n  ① 说"初始化这个项目"开始使用\n  ② 说"进入 bmad-help"了解工作流`
+      printSuccess(msg)
+      const written = stdoutSpy.mock.calls[0][0]
+      expect(written).toContain('①')
+      expect(written).toContain('②')
+    })
+
+    it('安装后引导消息包含 bmad-help 引导路径（FR22）', () => {
+      const msg = `安装完成（用时 5s）\n\nbmad-expert 已就绪。现在你可以：\n  ① 说"初始化这个项目"开始使用\n  ② 说"进入 bmad-help"了解工作流`
+      printSuccess(msg)
+      const written = stdoutSpy.mock.calls[0][0]
+      expect(written).toContain('bmad-help')
+    })
+
+    it('安装后引导消息包含安装耗时信息', () => {
+      const msg = `安装完成（用时 5s）\n\nbmad-expert 已就绪。现在你可以：\n  ① 说"初始化这个项目"开始使用\n  ② 说"进入 bmad-help"了解工作流`
+      printSuccess(msg)
+      const written = stdoutSpy.mock.calls[0][0]
+      expect(written).toContain('安装完成（用时')
+    })
   })
 
   describe('printError', () => {

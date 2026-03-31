@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-03-23T00:00:00Z
-last_updated: 2026-03-31T03:15:00Z
+last_updated: 2026-03-31T05:40:00Z
 project: bmad-expert
 project_key: NOKEY
 tracking_system: file-system
@@ -56,7 +56,7 @@ development_status:
   2-2-agent-template-files: done
   2-3-idempotent-install-detection: done
   2-4-happycapy-install-flow: done
-  2-5-install-success-confirmation: backlog
+  2-5-install-success-confirmation: review
   epic-2-retrospective: optional
 
   # Epic 3：AI 可自愈的结构化错误系统
