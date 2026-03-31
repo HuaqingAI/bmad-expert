@@ -84,4 +84,27 @@ describe('HappyCapy 完整安装流程（集成测试）', () => {
       install({ platform: null, agentId: 'bmad-expert', yes: false })
     ).rejects.toMatchObject({ bmadCode: 'E006' })
   })
+
+  it('正常安装：printSuccess 被调用且消息符合引导模板（AC1）', async () => {
+    await install({ platform: null, agentId: 'bmad-expert', yes: false })
+
+    const { printSuccess } = await import('../../lib/output.js')
+    expect(printSuccess).toHaveBeenCalled()
+    const msg = printSuccess.mock.calls.at(-1)?.[0] ?? ''
+    expect(msg).toContain('bmad-expert 已就绪')
+    expect(msg).toContain('①')
+    expect(msg).toContain('②')
+    expect(msg).toContain('bmad-help')
+    expect(msg).toContain('安装完成（用时')
+    expect(msg.indexOf('安装完成')).toBeLessThan(msg.indexOf('bmad-expert 已就绪'))
+  })
+
+  it('--yes 模式：安装完成后仍输出引导信息（FR30 + AC2）', async () => {
+    await install({ platform: null, agentId: 'bmad-expert', yes: true })
+
+    const { printSuccess } = await import('../../lib/output.js')
+    expect(printSuccess).toHaveBeenCalled()
+    const msg = printSuccess.mock.calls.at(-1)?.[0] ?? ''
+    expect(msg).toContain('bmad-expert 已就绪')
+  })
 })
