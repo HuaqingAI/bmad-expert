@@ -1,6 +1,6 @@
 # Story 3.1: 权限拒绝错误的结构化输出与备选路径
 
-Status: review
+Status: done
 
 ## Story
 

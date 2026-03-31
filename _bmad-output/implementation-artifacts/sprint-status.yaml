@@ -61,7 +61,7 @@ development_status:
 
   # Epic 3：AI 可自愈的结构化错误系统
   epic-3: in-progress
-  3-1-permission-denied-error: review
+  3-1-permission-denied-error: done
   3-2-invalid-args-dependency-error: backlog
   3-3-network-error-fallback: backlog
   epic-3-retrospective: optional
