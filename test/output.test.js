@@ -144,5 +144,46 @@ describe('output.js', () => {
       const written = stderrSpy.mock.calls.map(c => c[0]).join('')
       expect(written).toContain('普通错误')
     })
+
+    it('BmadError 含 fixSteps 时将步骤写入 stderr', () => {
+      const err = new BmadError('E004', '文件写入失败（权限不足）', new Error('EACCES'), [
+        '手动创建目标目录：mkdir -p ~/.happycapy/agents/bmad-expert',
+        '确认权限后重新执行：npx bmad-expert install',
+      ])
+      printError(err)
+      const written = stderrSpy.mock.calls.map(c => c[0]).join('')
+      expect(written).toContain('手动创建目标目录')
+      expect(written).toContain('确认权限后重新执行')
+    })
+
+    it('BmadError 无 fixSteps（空数组）时输出默认步骤', () => {
+      const err = new BmadError('E001', '通用错误', null)
+      printError(err)
+      const written = stderrSpy.mock.calls.map(c => c[0]).join('')
+      expect(written).toContain('检查错误原因并重试')
+    })
+
+    it('stderr 包含"修复步骤："字段', () => {
+      const err = new BmadError('E004', '权限错误', null, ['步骤一'])
+      printError(err)
+      const written = stderrSpy.mock.calls.map(c => c[0]).join('')
+      expect(written).toContain('修复步骤：')
+    })
+
+    it('E004 完整 Schema 格式验证', () => {
+      const err = new BmadError('E004', '文件写入失败（权限不足）', new Error('沙盒限制写入路径 /path'), [
+        '手动创建并授权目标目录：mkdir -p ~/.happycapy/agents/bmad-expert',
+        '确认路径权限后重新执行：npx bmad-expert install',
+      ])
+      printError(err)
+      const written = stderrSpy.mock.calls.map(c => c[0]).join('')
+      expect(written).toContain('ERROR [E004]')
+      expect(written).toContain('文件写入失败（权限不足）')
+      expect(written).toContain('原因：')
+      expect(written).toContain('沙盒限制写入路径')
+      expect(written).toContain('修复步骤：')
+      expect(written).toContain('可重试：是')
+      expect(stdoutSpy).not.toHaveBeenCalled()
+    })
   })
 })
