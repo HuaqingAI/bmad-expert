@@ -124,7 +124,7 @@ describe('writeAgentFiles', () => {
       model: 'claude-sonnet',
       installDate: '2026-03-24',
     })
-    expect(fsExtra.outputFile).toHaveBeenCalledTimes(4)
+    expect(fsExtra.outputFile).toHaveBeenCalledTimes(5)
   })
 
   it('写入内容中不存在未替换的 {{agent_id}} 占位符', async () => {
