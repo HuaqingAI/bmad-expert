@@ -6,6 +6,7 @@ import { dirname, join } from 'path'
 import { EXIT_CODES } from './lib/exit-codes.js'
 import { BmadError } from './lib/errors.js'
 import { printError } from './lib/output.js'
+import { install } from './lib/installer.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const pkg = JSON.parse(readFileSync(join(__dirname, 'package.json'), 'utf8'))
@@ -24,18 +25,11 @@ program
   .option('--agent-id <id>', 'Agent 标识符', 'bmad-expert')
   .option('--yes', '非交互模式，跳过所有确认提示')
   .action(async (options) => {
-    const { detectPlatform, getAdapter } = await import('./lib/platform.js')
-    const { checkInstallStatus } = await import('./lib/installer.js')
-    const { printProgress } = await import('./lib/output.js')
-
-    printProgress('正在检测平台...')
-    const platform = await detectPlatform(options.platform ?? null)
-    printProgress('正在检测平台...', true)
-
-    const adapter = getAdapter(platform)
-    await checkInstallStatus(adapter, options.agentId)
-
-    // TODO(Story 2.4): 实现完整安装流程（文件复制、变量替换、happycapy-cli 注册）
+    await install({
+      platform: options.platform ?? null,
+      agentId: options.agentId,
+      yes: options.yes ?? false,
+    })
   })
 
 // Growth 阶段命令占位（Story 6.x 实现，勿提前实现逻辑）
