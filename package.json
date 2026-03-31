@@ -38,7 +38,7 @@
     "access": "public"
   },
   "bmadExpert": {
-    "frameworkFiles": ["SOUL.md", "IDENTITY.md", "AGENTS.md", "BOOTSTRAP.md"],
+    "frameworkFiles": ["SOUL.md", "IDENTITY.md", "AGENTS.md", "BOOTSTRAP.md", "bmad-project-init.md"],
     "userDataPaths": ["MEMORY.md", "USER.md", "memory/"]
   }
 }
