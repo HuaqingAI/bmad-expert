@@ -1,6 +1,6 @@
 # Story 6.1: update 命令与用户数据保护
 
-Status: review
+Status: done
 
 ## Story
 
