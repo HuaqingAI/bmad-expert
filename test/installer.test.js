@@ -144,16 +144,20 @@ describe('writeAgentFiles', () => {
     }
   })
 
-  it('创建目录权限失败时包装为 BmadError E004 并保留 cause', async () => {
+  it('创建目录权限失败时包装为 BmadError E004，cause 包含路径信息', async () => {
     const fsExtra = (await import('fs-extra')).default
-    const permissionError = Object.assign(new Error('permission denied'), { code: 'EACCES' })
+    const permissionError = Object.assign(new Error('permission denied'), {
+      code: 'EACCES',
+      path: '/home/user/.happycapy/agents/test',
+    })
     fsExtra.ensureDir.mockRejectedValueOnce(permissionError)
 
     await expect(
       writeAgentFiles('/home/user/.happycapy/agents/test', { agentId: 'test' })
     ).rejects.toMatchObject({
       bmadCode: 'E004',
-      cause: permissionError,
+      message: '文件写入失败（权限不足）',
+      retryable: true,
     })
   })
 
@@ -170,7 +174,7 @@ describe('writeAgentFiles', () => {
     })
   })
 
-  it('写入模板失败时包装为 BmadError E004 并保留 cause', async () => {
+  it('写入模板失败时包装为 BmadError E004，cause 包含路径信息', async () => {
     const fsExtra = (await import('fs-extra')).default
     const permissionError = Object.assign(new Error('cannot write'), { code: 'EPERM' })
     fsExtra.outputFile.mockRejectedValueOnce(permissionError)
@@ -179,7 +183,8 @@ describe('writeAgentFiles', () => {
       writeAgentFiles('/home/user/.happycapy/agents/test', { agentId: 'test' })
     ).rejects.toMatchObject({
       bmadCode: 'E004',
-      cause: permissionError,
+      message: '文件写入失败（权限不足）',
+      retryable: true,
     })
   })
 })

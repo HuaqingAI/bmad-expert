@@ -68,3 +68,27 @@ describe('BmadError', () => {
     expect(err.stack).toBeDefined()
   })
 })
+
+describe('BmadError fixSteps', () => {
+  it('传入 fixSteps 数组时正确保存', () => {
+    const fixSteps = ['步骤一：执行 X', '步骤二：执行 Y']
+    const err = new BmadError('E004', '权限不足', null, fixSteps)
+    expect(err.fixSteps).toEqual(fixSteps)
+  })
+
+  it('不传第四参数时 fixSteps 默认为空数组', () => {
+    const err = new BmadError('E004', '权限不足', null)
+    expect(err.fixSteps).toEqual([])
+  })
+
+  it('传入非数组时 fixSteps 被规范化为空数组', () => {
+    const err = new BmadError('E004', '权限不足', null, '无效')
+    expect(err.fixSteps).toEqual([])
+  })
+
+  it('E004 retryable=true 且 fixSteps 独立（互不影响）', () => {
+    const err = new BmadError('E004', '权限不足', null, ['步骤A'])
+    expect(err.retryable).toBe(true)
+    expect(err.fixSteps).toEqual(['步骤A'])
+  })
+})
