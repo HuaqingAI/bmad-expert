@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-03-23T00:00:00Z
-last_updated: 2026-03-24T19:00:00Z
+last_updated: 2026-03-30T01:30:00Z
 project: bmad-expert
 project_key: NOKEY
 tracking_system: file-system
@@ -43,18 +43,18 @@ story_location: _bmad-output/implementation-artifacts
 
 development_status:
   # Epic 1：项目脚手架与 CLI 基础设施
-  epic-1: in-progress
+  epic-1: done
   1-1-npm-package-init: done
-  1-2-exit-codes-and-errors: review
-  1-3-output-module: review
-  1-4-ci-cd-pipeline: review
+  1-2-exit-codes-and-errors: done
+  1-3-output-module: done
+  1-4-ci-cd-pipeline: done
   epic-1-retrospective: optional
 
   # Epic 2：HappyCapy 平台完整安装体验（MVP 核心）
   epic-2: in-progress
-  2-1-platform-detection-happycapy-adapter: review
-  2-2-agent-template-files: review
-  2-3-idempotent-install-detection: backlog
+  2-1-platform-detection-happycapy-adapter: done
+  2-2-agent-template-files: done
+  2-3-idempotent-install-detection: done
   2-4-happycapy-install-flow: backlog
   2-5-install-success-confirmation: backlog
   epic-2-retrospective: optional

@@ -23,10 +23,19 @@ program
   .option('--platform <name>', '指定目标平台（happycapy/cursor/claude-code）')
   .option('--agent-id <id>', 'Agent 标识符', 'bmad-expert')
   .option('--yes', '非交互模式，跳过所有确认提示')
-  .action(async (_options) => {
-    // TODO: Story 2.x 实现完整安装逻辑
-    // 实现时参考架构文档：lib/installer.js → platform.js → adapter → output.js
-    console.log('install command - to be implemented in Story 2.x')
+  .action(async (options) => {
+    const { detectPlatform, getAdapter } = await import('./lib/platform.js')
+    const { checkInstallStatus } = await import('./lib/installer.js')
+    const { printProgress } = await import('./lib/output.js')
+
+    printProgress('正在检测平台...')
+    const platform = await detectPlatform(options.platform ?? null)
+    printProgress('正在检测平台...', true)
+
+    const adapter = getAdapter(platform)
+    await checkInstallStatus(adapter, options.agentId)
+
+    // TODO(Story 2.4): 实现完整安装流程（文件复制、变量替换、happycapy-cli 注册）
   })
 
 // Growth 阶段命令占位（Story 6.x 实现，勿提前实现逻辑）
@@ -54,10 +63,16 @@ const CODE_TO_EXIT = {
 }
 
 program.parseAsync().catch(err => {
-  printError(err)
-  if (err instanceof BmadError) {
-    process.exit(CODE_TO_EXIT[err.bmadCode] ?? EXIT_CODES.GENERAL_ERROR)
+  if (err instanceof BmadError && err.bmadCode === 'E006') {
+    // ALREADY_INSTALLED 是正常状态：消息已由 checkInstallStatus 打印到 stdout
+    // 不走 printError（不是真正的错误），直接以 exit code 6 退出
+    process.exit(EXIT_CODES.ALREADY_INSTALLED)
   } else {
-    process.exit(EXIT_CODES.GENERAL_ERROR)
+    printError(err)
+    if (err instanceof BmadError) {
+      process.exit(CODE_TO_EXIT[err.bmadCode] ?? EXIT_CODES.GENERAL_ERROR)
+    } else {
+      process.exit(EXIT_CODES.GENERAL_ERROR)
+    }
   }
 })
