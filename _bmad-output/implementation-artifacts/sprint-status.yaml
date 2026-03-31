@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-03-23T00:00:00Z
-last_updated: 2026-03-31T05:55:00Z
+last_updated: 2026-03-31T06:30:00Z
 project: bmad-expert
 project_key: NOKEY
 tracking_system: file-system
@@ -62,7 +62,7 @@ development_status:
   # Epic 3：AI 可自愈的结构化错误系统
   epic-3: in-progress
   3-1-permission-denied-error: done
-  3-2-invalid-args-dependency-error: backlog
+  3-2-invalid-args-dependency-error: review
   3-3-network-error-fallback: backlog
   epic-3-retrospective: optional
 
