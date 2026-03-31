@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-03-23T00:00:00Z
-last_updated: 2026-03-31T04:00:00Z
+last_updated: 2026-03-31T04:30:00Z
 project: bmad-expert
 project_key: NOKEY
 tracking_system: file-system
@@ -67,8 +67,8 @@ development_status:
   epic-3-retrospective: optional
 
   # Epic 4：BOOTSTRAP 与零追问会话初始化
-  epic-4: backlog
-  4-1-persistent-config-session-detection: backlog
+  epic-4: in-progress
+  4-1-persistent-config-session-detection: review
   4-2-bootstrap-file-self-destruct: backlog
   4-3-install-integration-validation: backlog
   epic-4-retrospective: optional
