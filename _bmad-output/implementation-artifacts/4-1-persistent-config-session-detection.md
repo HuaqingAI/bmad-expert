@@ -173,18 +173,36 @@ claude-sonnet-4-6
 - 设计并实现 `agent/SOUL.md`：含 Core Truths（BMAD 专家身份）、Boundaries、Vibe、Continuity 四个区块；使用 `{{agent_name}}`、`{{agent_id}}`、`{{install_date}}` 模板变量
 - 设计并实现 `agent/IDENTITY.md`：含 Role Definition（BMAD 方法论专家）、Core Capabilities（5项）、Working Style（4条原则）、Specializations（按任务类型映射到对应 BMAD 技能）
 - 设计并实现 `agent/AGENTS.md`（主交付物）：
-  - Session Startup（Step 1-3）：读取身份文件 → BOOTSTRAP.md 检测 → BMAD 环境检测
-  - BMAD 零追问初始化流程（Step A-D）：推断项目名 → 创建 `_bmad/bmm/` 结构 → 写入 config.yaml → invoke bmad-help
+  - Session Startup（Step 1-3）：读取身份文件 → BOOTSTRAP.md 检测 → BMAD 项目初始化按需加载
   - Memory 管理区块：日记与长期记忆规则
   - Red Lines 区块：数据保护与危险操作约束
   - Communication Style 区块
-- 全部三个文件仅使用合法模板变量（`{{agent_id}}`、`{{agent_name}}`、`{{install_date}}`），无误替换风险
-- 无 .js 文件改动；本故事 100% 为 Markdown 内容设计
+- 新增 `agent/bmad-project-init.md`：独立的 BMAD 项目初始化指令文件，按需加载
+  - Step 1：BMAD 环境检测（以 `_bmad/` + config.yaml 为权威标志）
+  - Step 2：通过 `npx bmad-method install --modules bmm --yes` 执行官方安装
+  - Step 3：验证安装结果
+  - Step 4：输出确认并 invoke bmad-help
+- 全部模板文件仅使用合法模板变量（`{{agent_id}}`、`{{agent_name}}`、`{{install_date}}`），无误替换风险
+
+#### Sprint Change Proposal (2026-03-31 v2)
+
+实施过程中发现两层设计问题并通过 Correct Course 流程修正：
+
+1. **初始化方式错误**：从 agent 手动创建 config.yaml 改为调用 BMAD 官方安装器 `npx bmad-method install --modules bmm --yes`，确保初始化完整性和版本可控性
+2. **架构性错误（更根本）**：BMAD 是项目级而非 agent 级。将 BMAD 检测和初始化逻辑从 AGENTS.md Session Startup 移出到独立文件 `bmad-project-init.md`，改为按需加载（用户进入项目上下文或调用 bmad-* skill 时触发）
+
+范围扩展：Story 从"纯内容设计"扩展为包含 `lib/installer.js` 和 `package.json` 的小改（FRAMEWORK_FILES 新增 `bmad-project-init.md`）。
+
+详见：`_bmad-output/planning-artifacts/sprint-change-proposal-2026-03-31.md`
 
 ### File List
 
 - `agent/SOUL.md`
 - `agent/IDENTITY.md`
 - `agent/AGENTS.md`
+- `agent/bmad-project-init.md`（新增）
+- `lib/installer.js`（FRAMEWORK_FILES 新增条目）
+- `package.json`（bmadExpert.frameworkFiles 同步新增）
 - `_bmad-output/implementation-artifacts/4-1-persistent-config-session-detection.md`
 - `_bmad-output/implementation-artifacts/sprint-status.yaml`
+- `_bmad-output/planning-artifacts/sprint-change-proposal-2026-03-31.md`（新增）

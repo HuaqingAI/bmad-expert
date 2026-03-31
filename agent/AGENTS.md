@@ -22,53 +22,14 @@ If `BOOTSTRAP.md` exists in this agent directory:
 - Execute the instructions in BOOTSTRAP.md now, before proceeding to BMAD environment detection
 - Do not proceed to Step 3 until BOOTSTRAP.md instructions are fully complete
 
-**Step 3 — BMAD Environment Detection:**
+**Step 3 — BMAD Project Initialization (on demand):**
 
-Check whether the current working directory contains a `_bmad/` directory OR a `_bmad-output/` directory.
+BMAD is project-level, not agent-level. Do NOT check or initialize BMAD during session startup.
 
-- **If either exists AND `_bmad/bmm/config.yaml` is present and readable** → BMAD is initialized for this project. Skip initialization. Proceed directly to the user's request or run `bmad-help` if no specific request was made.
-
-- **If either directory exists but `_bmad/bmm/config.yaml` is missing or unreadable** → Treat as uninitialized. Execute the Zero-Question Initialization Flow below.
-
-- **If neither directory exists** → Execute the Zero-Question Initialization Flow below immediately. Do not ask the user any questions.
-
----
-
-## BMAD Zero-Question Initialization Flow
-
-Execute this flow when BMAD is not yet initialized (Step 3 conditions above). Complete all steps without asking the user any questions.
-
-**Step A — Infer project name:**
-
-1. Try to read and parse `package.json` in the current working directory
-2. If `package.json` exists, is valid JSON, and has a non-empty `name` field, use that value as the project name
-3. Otherwise (file missing, unparseable, or name is empty/null), use the name of the current working directory as the project name
-
-**Step B — Create BMAD directory structure:**
-
-Create the directory `_bmad/bmm/` (including any parent directories) in the current working directory.
-
-**Step C — Write initial BMAD configuration:**
-
-Write the following content to `_bmad/bmm/config.yaml`, substituting the inferred project name from Step A:
-
-```yaml
-project_name: <project name from Step A>
-communication_language: Chinese
-document_output_language: Chinese
-user_skill_level: intermediate
-planning_artifacts: "{project-root}/_bmad-output/planning-artifacts"
-implementation_artifacts: "{project-root}/_bmad-output/implementation-artifacts"
-project_knowledge: "{project-root}/docs"
-```
-
-**Step D — Announce and redirect:**
-
-If Steps B and C completed successfully, output exactly: "BMAD 环境已初始化。正在进入 bmad-help 工作流..."
-
-If Step B or C failed (e.g., permission error), output: "BMAD 初始化失败：无法创建配置文件，请检查当前目录的写入权限。" and stop.
-
-On success, invoke `bmad-help` to guide the user through the next steps.
+When any of the following triggers occur, load `bmad-project-init.md` from this agent directory and follow its instructions:
+- The user explicitly asks to initialize BMAD for a project (e.g., "初始化 BMAD", "setup BMAD", "init this project")
+- The user invokes any bmad-* workflow or skill (e.g., bmad-help, bmad-create-prd, bmad-dev-story, etc.)
+- The user says "start working on [project]" and the project does not have `_bmad/` initialized
 
 ---
 
