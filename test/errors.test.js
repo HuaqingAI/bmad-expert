@@ -91,4 +91,11 @@ describe('BmadError fixSteps', () => {
     expect(err.retryable).toBe(true)
     expect(err.fixSteps).toEqual(['步骤A'])
   })
+
+  it('E005 retryable=true 且可携带 fixSteps（互不干扰）', () => {
+    const fixSteps = ['检查网络连接', '若持续失败，检查代理设置']
+    const err = new BmadError('E005', '网络错误', null, fixSteps)
+    expect(err.retryable).toBe(true)
+    expect(err.fixSteps).toEqual(fixSteps)
+  })
 })

@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-03-23T00:00:00Z
-last_updated: 2026-03-31T05:55:00Z
+last_updated: 2026-03-31T06:10:00Z
 project: bmad-expert
 project_key: NOKEY
 tracking_system: file-system
@@ -63,7 +63,7 @@ development_status:
   epic-3: in-progress
   3-1-permission-denied-error: done
   3-2-invalid-args-dependency-error: backlog
-  3-3-network-error-fallback: backlog
+  3-3-network-error-fallback: review
   epic-3-retrospective: optional
 
   # Epic 4：BOOTSTRAP 与零追问会话初始化
