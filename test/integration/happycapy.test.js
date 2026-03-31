@@ -43,12 +43,12 @@ describe('HappyCapy 完整安装流程（集成测试）', () => {
     vi.unstubAllEnvs()
   })
 
-  it('正常安装：写入 4 个文件并调用 happycapy-cli add', async () => {
+  it('正常安装：写入 5 个文件并调用 happycapy-cli add', async () => {
     await install({ platform: null, agentId: 'bmad-expert', yes: false })
 
     const fsExtra = (await import('fs-extra')).default
-    // 4 个框架文件全部写入
-    expect(fsExtra.outputFile).toHaveBeenCalledTimes(4)
+    // 5 个框架文件全部写入
+    expect(fsExtra.outputFile).toHaveBeenCalledTimes(5)
 
     // happycapy-cli add 被调用
     const { execa } = await import('execa')
