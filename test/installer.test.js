@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { replaceTemplateVars, writeAgentFiles, checkInstallStatus } from '../lib/installer.js'
+import { replaceTemplateVars, writeAgentFiles, checkInstallStatus, wrapNetworkError } from '../lib/installer.js'
 import { BmadError } from '../lib/errors.js'
 import { printProgress } from '../lib/output.js'
 
@@ -228,5 +228,60 @@ describe('checkInstallStatus', () => {
     mockAdapter.check.mockResolvedValueOnce('not_installed')
     await checkInstallStatus(mockAdapter, 'my-custom-agent')
     expect(mockAdapter.check).toHaveBeenCalledWith('my-custom-agent')
+  })
+})
+
+// ─── wrapNetworkError ──────────────────────────────────────────────────────
+
+describe('wrapNetworkError', () => {
+  it('ECONNREFUSED 时抛出 BmadError E005', () => {
+    const error = Object.assign(new Error('connection refused'), { code: 'ECONNREFUSED' })
+    expect(() => wrapNetworkError(error, '网络调用失败')).toThrow(
+      expect.objectContaining({ bmadCode: 'E005' })
+    )
+  })
+
+  it('ETIMEDOUT 时抛出 BmadError E005', () => {
+    const error = Object.assign(new Error('timed out'), { code: 'ETIMEDOUT' })
+    expect(() => wrapNetworkError(error, '网络调用失败')).toThrow(
+      expect.objectContaining({ bmadCode: 'E005' })
+    )
+  })
+
+  it('ENOTFOUND 时抛出 BmadError E005', () => {
+    const error = Object.assign(new Error('not found'), { code: 'ENOTFOUND' })
+    expect(() => wrapNetworkError(error, '网络调用失败')).toThrow(
+      expect.objectContaining({ bmadCode: 'E005' })
+    )
+  })
+
+  it('E005 retryable=true', () => {
+    const error = Object.assign(new Error('timeout'), { code: 'ETIMEDOUT' })
+    let thrown
+    try { wrapNetworkError(error, '失败') } catch (e) { thrown = e }
+    expect(thrown.retryable).toBe(true)
+  })
+
+  it('E005 fixSteps 含两条修复步骤，第一步含安装命令', () => {
+    const error = Object.assign(new Error('refused'), { code: 'ECONNREFUSED' })
+    let thrown
+    try { wrapNetworkError(error, '失败') } catch (e) { thrown = e }
+    expect(thrown.fixSteps).toHaveLength(2)
+    expect(thrown.fixSteps[0]).toContain('npx bmad-expert install')
+    expect(thrown.fixSteps[1]).toContain('代理设置')
+  })
+
+  it('非网络错误（ENOENT）时抛出 BmadError E001', () => {
+    const error = Object.assign(new Error('no such file'), { code: 'ENOENT' })
+    expect(() => wrapNetworkError(error, '非网络失败')).toThrow(
+      expect.objectContaining({ bmadCode: 'E001' })
+    )
+  })
+
+  it('error.code 为 undefined 时抛出 BmadError E001', () => {
+    const error = new Error('unknown')
+    expect(() => wrapNetworkError(error, '未知失败')).toThrow(
+      expect.objectContaining({ bmadCode: 'E001' })
+    )
   })
 })

@@ -213,5 +213,23 @@ describe('output.js', () => {
       expect(written).toContain('可重试：是')
       expect(stdoutSpy).not.toHaveBeenCalled()
     })
+
+    it('E005 完整 Schema 格式验证', () => {
+      const err = new BmadError('E005', '网络错误', new Error('connection refused'), [
+        '检查网络连接后重新执行安装命令：npx bmad-expert install',
+        '若持续失败，检查代理设置',
+      ])
+      printError(err)
+      const written = stderrSpy.mock.calls.map(c => c[0]).join('')
+      expect(written).toContain('ERROR [E005]')
+      expect(written).toContain('网络错误')
+      expect(written).toContain('原因：')
+      expect(written).toContain('connection refused')
+      expect(written).toContain('修复步骤：')
+      expect(written).toContain('npx bmad-expert install')
+      expect(written).toContain('代理设置')
+      expect(written).toContain('可重试：是')
+      expect(stdoutSpy).not.toHaveBeenCalled()
+    })
   })
 })
