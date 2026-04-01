@@ -7,6 +7,7 @@ import { EXIT_CODES } from './lib/exit-codes.js'
 import { BmadError } from './lib/errors.js'
 import { printError } from './lib/output.js'
 import { install } from './lib/installer.js'
+import { update } from './lib/updater.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const pkg = JSON.parse(readFileSync(join(__dirname, 'package.json'), 'utf8'))
@@ -32,12 +33,16 @@ program
     })
   })
 
-// Growth 阶段命令占位（Story 6.x 实现，勿提前实现逻辑）
 program
   .command('update')
   .description('安全更新框架文件，保留用户 memory 与个性化配置（Growth）')
-  .action(() => {
-    // TODO: Story 6.1 实现
+  .option('--platform <name>', '指定目标平台（happycapy/cursor/claude-code）')
+  .option('--agent-id <id>', 'Agent 标识符', 'bmad-expert')
+  .action(async (options) => {
+    await update({
+      platform: options.platform ?? null,
+      agentId: options.agentId,
+    })
   })
 
 program

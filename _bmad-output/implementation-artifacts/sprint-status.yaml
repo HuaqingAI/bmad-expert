@@ -79,8 +79,8 @@ development_status:
   epic-5-retrospective: optional
 
   # Epic 6：安全更新与状态管理（Growth）
-  epic-6: backlog
-  6-1-update-command-data-protection: backlog
+  epic-6: in-progress
+  6-1-update-command-data-protection: done
   6-2-status-command-health-check: backlog
   6-3-json-output-mode: backlog
   epic-6-retrospective: optional
