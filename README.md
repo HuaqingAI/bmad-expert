@@ -3,7 +3,29 @@
 [![npm version](https://img.shields.io/npm/v/bmad-expert)](https://www.npmjs.com/package/bmad-expert)
 [![CI](https://github.com/HuaqingAI/bmad-expert/actions/workflows/ci.yml/badge.svg)](https://github.com/HuaqingAI/bmad-expert/actions/workflows/ci.yml)
 
-A [HappyCapy](https://happycapy.ai) agent specialized in **BMAD-METHOD** workflow guidance and execution.
+A [HappyCapy](https://happycapy.ai) agent (*agent: an AI assistant configuration that runs on HappyCapy*) specialized in **BMAD** (*BMAD: an AI-assisted product development workflow methodology*) guidance and execution.
+
+## Quick Start
+
+Install BMAD Expert on **[HappyCapy](https://happycapy.ai)** in one step — no terminal required.
+
+### HappyCapy
+
+Copy the sentence below and paste it into your HappyCapy chat window. The AI will run the installation automatically.
+
+```
+Please run npx bmad-expert install to install BMAD Expert
+```
+
+> **Where to paste:** Open any HappyCapy chat (or create a new desktop), paste the sentence above, and send it.
+>
+> **What happens next:** The AI will execute `npx bmad-expert install` (*npx: a Node.js tool runner — no global installation needed*) on your behalf. Installation takes about 60 seconds. When complete, you'll see BMAD Expert in your agent list and can say *"enter bmad-help"* to get started.
+
+### Claude Code *(coming soon)*
+
+### OpenClaw *(coming soon)*
+
+---
 
 ## What is BMAD Expert?
 
@@ -23,22 +45,6 @@ It assumes you've already decided to use BMAD. Its job is to help you use it wel
 | Research | Domain, market, and technical research |
 | Project Management | Sprint planning, Sprint status, Retrospectives |
 | Documentation | Project context, Index docs |
-
-## npm 包发布说明
-
-> **重要：** 发布前需确认 `bmad-expert` 包名在 npm 公开注册表中可用。
-> 执行 `npm view bmad-expert` 检查，若已被占用请提前选定备用包名并更新 `package.json`、`bin` 字段及文档中所有引用。
-
-## Installation
-
-1. Make sure you have [HappyCapy](https://happycapy.ai) set up.
-2. Clone this repository into your HappyCapy agents directory:
-
-```bash
-git clone https://github.com/HuaqingAI/bmad-expert ~/.happycapy/agents/bmad-expert
-```
-
-3. The agent will appear in your HappyCapy agent list. Select **BMAD Expert** when creating a new desktop.
 
 ## File Structure
 
