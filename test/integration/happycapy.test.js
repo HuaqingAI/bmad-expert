@@ -70,9 +70,10 @@ describe('HappyCapy 完整安装流程（集成测试）', () => {
       return Promise.resolve({ exitCode: 0 })
     })
 
+    // Story 6.3: install() 现在返回结构化数据 { platform, agentId, installPath, duration }
     await expect(
       install({ platform: null, agentId: 'bmad-expert', yes: false })
-    ).resolves.toBeUndefined()
+    ).resolves.toBeDefined()
   })
 
   it('幂等检测：已安装时 throw BmadError(E006)', async () => {
