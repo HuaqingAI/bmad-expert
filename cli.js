@@ -8,6 +8,7 @@ import { BmadError } from './lib/errors.js'
 import { printError } from './lib/output.js'
 import { install } from './lib/installer.js'
 import { update } from './lib/updater.js'
+import { checkStatus } from './lib/checker.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const pkg = JSON.parse(readFileSync(join(__dirname, 'package.json'), 'utf8'))
@@ -48,8 +49,13 @@ program
 program
   .command('status')
   .description('检查当前安装健康度（Growth）')
-  .action(() => {
-    // TODO: Story 6.2 实现
+  .option('--platform <name>', '指定目标平台（happycapy/cursor/claude-code）')
+  .option('--agent-id <id>', 'Agent 标识符', 'bmad-expert')
+  .action(async (options) => {
+    await checkStatus({
+      platform: options.platform ?? null,
+      agentId: options.agentId,
+    })
   })
 
 const CODE_TO_EXIT = {

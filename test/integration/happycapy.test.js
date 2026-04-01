@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { install } from '../../lib/installer.js'
-import { BmadError } from '../../lib/errors.js'
 
 // ── 模块 Mock ──────────────────────────────────────────────────────────────
 vi.mock('fs-extra', () => ({

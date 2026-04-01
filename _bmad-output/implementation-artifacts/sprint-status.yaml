@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-03-23T00:00:00Z
-last_updated: 2026-03-31T08:00:00Z
+last_updated: 2026-04-01T05:00:00Z
 project: bmad-expert
 project_key: NOKEY
 tracking_system: file-system
@@ -81,6 +81,6 @@ development_status:
   # Epic 6：安全更新与状态管理（Growth）
   epic-6: in-progress
   6-1-update-command-data-protection: done
-  6-2-status-command-health-check: backlog
+  6-2-status-command-health-check: review
   6-3-json-output-mode: backlog
   epic-6-retrospective: optional
