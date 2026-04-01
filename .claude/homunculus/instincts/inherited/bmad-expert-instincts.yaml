@@ -1,0 +1,707 @@
+# Instincts generated from https://github.com/HuaqingAI/bmad-expert
+# Generated: 2026-04-01T01:26:35.080Z
+# Version: 2.0
+# NOTE: This file supplements (does not replace) any existing curated instincts.
+# High-confidence manually curated instincts should be preserved alongside these.
+
+---
+id: bmad-expert-commit-length
+trigger: "when writing a commit message"
+confidence: 0.6
+domain: git
+source: repo-analysis
+source_repo: https://github.com/HuaqingAI/bmad-expert
+---
+
+# Bmad Expert Commit Length
+
+## Action
+
+Write moderate-length commit messages (~59 characters)
+
+## Evidence
+
+- Average commit message length: 59 chars
+- Based on 52 commits
+
+---
+id: bmad-expert-naming-files
+trigger: "when creating a new file"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: https://github.com/HuaqingAI/bmad-expert
+---
+
+# Bmad Expert Naming Files
+
+## Action
+
+Use kebab-case naming convention
+
+## Evidence
+
+- Analyzed file naming patterns in repository
+- Dominant pattern: kebab-case
+
+---
+id: bmad-expert-import-relative
+trigger: "when importing modules"
+confidence: 0.75
+domain: code-style
+source: repo-analysis
+source_repo: https://github.com/HuaqingAI/bmad-expert
+---
+
+# Bmad Expert Import Relative
+
+## Action
+
+Use relative imports for project files
+
+## Evidence
+
+- Import analysis shows relative import pattern
+- Example: import { x } from '../lib/x'
+
+---
+id: bmad-expert-export-style
+trigger: "when exporting from a module"
+confidence: 0.7
+domain: code-style
+source: repo-analysis
+source_repo: https://github.com/HuaqingAI/bmad-expert
+---
+
+# Bmad Expert Export Style
+
+## Action
+
+Prefer named exports
+
+## Evidence
+
+- Export pattern analysis
+- Dominant style: named
+
+---
+id: bmad-expert-test-separate
+trigger: "when writing tests"
+confidence: 0.8
+domain: testing
+source: repo-analysis
+source_repo: https://github.com/HuaqingAI/bmad-expert
+---
+
+# Bmad Expert Test Separate
+
+## Action
+
+Place tests in the tests/ or __tests__/ directory, mirroring src structure
+
+## Evidence
+
+- Separate test directory pattern detected
+- Tests live in dedicated test folders
+
+---
+id: bmad-expert-test-framework
+trigger: "when writing tests"
+confidence: 0.9
+domain: testing
+source: repo-analysis
+source_repo: https://github.com/HuaqingAI/bmad-expert
+---
+
+# Bmad Expert Test Framework
+
+## Action
+
+Use vitest as the test framework
+
+## Evidence
+
+- Test framework detected: vitest
+- File pattern: *.test.js
+
+---
+id: bmad-expert-test-naming
+trigger: "when creating a test file"
+confidence: 0.85
+domain: testing
+source: repo-analysis
+source_repo: https://github.com/HuaqingAI/bmad-expert
+---
+
+# Bmad Expert Test Naming
+
+## Action
+
+Name test files using the pattern: *.test.js
+
+## Evidence
+
+- File pattern: *.test.js
+- Consistent across test files
+
+---
+id: bmad-expert-test-mocking
+trigger: "when mocking dependencies in tests"
+confidence: 0.75
+domain: testing
+source: repo-analysis
+source_repo: https://github.com/HuaqingAI/bmad-expert
+---
+
+# Bmad Expert Test Mocking
+
+## Action
+
+Use vi.mock for mocking
+
+## Evidence
+
+- Mocking pattern detected: vi.mock
+- Consistent across test files
+
+---
+id: bmad-expert-test-types
+trigger: "when planning tests for a feature"
+confidence: 0.7
+domain: testing
+source: repo-analysis
+source_repo: https://github.com/HuaqingAI/bmad-expert
+---
+
+# Bmad Expert Test Types
+
+## Action
+
+Write unit, integration tests to match project standards
+
+## Evidence
+
+- Test types detected: unit, integration
+- Coverage config: yes
+
+---
+id: bmad-expert-workflow-feature-development
+trigger: "when implementing a new feature"
+confidence: 0.9
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/HuaqingAI/bmad-expert
+---
+
+# Bmad Expert Workflow Feature Development
+
+## Action
+
+Follow the feature-development workflow:
+1. Add feature implementation
+2. Add tests for feature
+3. Update documentation
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~14x per month
+- Files: .claude/skills/bmad-create-ux-design/steps/*, .agents/skills/bmad-create-ux-design/steps/*, **/*.test.*
+
+---
+id: bmad-expert-workflow-test-driven-development
+trigger: "when adding new functionality"
+confidence: 0.7
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/HuaqingAI/bmad-expert
+---
+
+# Bmad Expert Workflow Test Driven Development
+
+## Action
+
+Follow the test-driven-development workflow:
+1. Write failing test
+2. Implement code to pass test
+3. Refactor if needed
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~4x per month
+- Files: **/*.test.*, **/*.spec.*, src/**/*
+
+---
+id: bmad-expert-workflow-implement-story-feature-with-traceable-artifacts-tests
+trigger: "when doing implement story feature with traceable artifacts tests"
+confidence: 0.8
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/HuaqingAI/bmad-expert
+---
+
+# Bmad Expert Workflow Implement Story Feature With Traceable Artifacts Tests
+
+## Action
+
+Follow the implement-story-feature-with-traceable-artifacts-tests workflow:
+1. Create or update _bmad-output/implementation-artifacts/{story}.md for the story's implementation record.
+2. Update _bmad-output/implementation-artifacts/sprint-status.yaml to reflect story progress.
+3. Modify or add core logic files (e.g., lib/installer.js, lib/errors.js, lib/platform.js, cli.js).
+4. Update or add corresponding test files (e.g., test/errors.test.js, test/installer.test.js, test/output.test.js, test/platform.test.js, test/integration/happycapy.test.js).
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~6x per month
+- Files: _bmad-output/implementation-artifacts/{story}.md, _bmad-output/implementation-artifacts/sprint-status.yaml, lib/*.js
+
+---
+id: bmad-expert-workflow-agent-template-and-boilerplate-expansion
+trigger: "when doing agent template and boilerplate expansion"
+confidence: 0.6
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/HuaqingAI/bmad-expert
+---
+
+# Bmad Expert Workflow Agent Template And Boilerplate Expansion
+
+## Action
+
+Follow the agent-template-and-boilerplate-expansion workflow:
+1. Create or update agent/AGENTS.md, agent/BOOTSTRAP.md, agent/IDENTITY.md, agent/SOUL.md, or agent/bmad-project-init.md.
+2. Update lib/installer.js to handle new templates or template variable replacement.
+3. Update or add tests in test/installer.test.js or test/integration/happycapy.test.js to cover template logic.
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~2x per month
+- Files: agent/AGENTS.md, agent/BOOTSTRAP.md, agent/IDENTITY.md
+
+---
+id: bmad-expert-workflow-ci-cd-pipeline-update
+trigger: "when doing ci cd pipeline update"
+confidence: 0.6
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/HuaqingAI/bmad-expert
+---
+
+# Bmad Expert Workflow Ci Cd Pipeline Update
+
+## Action
+
+Follow the ci-cd-pipeline-update workflow:
+1. Create or update .github/workflows/ci.yml and .github/workflows/publish.yml.
+2. Update package.json or README.md with CI/CD-related info.
+3. Document changes in _bmad-output/implementation-artifacts/{story}.md and sprint-status.yaml.
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~2x per month
+- Files: .github/workflows/ci.yml, .github/workflows/publish.yml, package.json
+
+---
+id: bmad-expert-workflow-sprint-status-and-story-spec-tracking
+trigger: "when doing sprint status and story spec tracking"
+confidence: 0.7
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/HuaqingAI/bmad-expert
+---
+
+# Bmad Expert Workflow Sprint Status And Story Spec Tracking
+
+## Action
+
+Follow the sprint-status-and-story-spec-tracking workflow:
+1. Update _bmad-output/implementation-artifacts/sprint-status.yaml with new status.
+2. Add or update _bmad-output/implementation-artifacts/{story}.md for story spec or review.
+3. Optionally, update planning artifacts (e.g., _bmad-output/planning-artifacts/epics.md).
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~4x per month
+- Files: _bmad-output/implementation-artifacts/sprint-status.yaml, _bmad-output/implementation-artifacts/*.md, _bmad-output/planning-artifacts/*.md
+
+---
+id: bmad-expert-workflow-error-handling-module-expansion
+trigger: "when doing error handling module expansion"
+confidence: 0.6
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/HuaqingAI/bmad-expert
+---
+
+# Bmad Expert Workflow Error Handling Module Expansion
+
+## Action
+
+Follow the error-handling-module-expansion workflow:
+1. Update or create lib/errors.js and/or lib/exit-codes.js with new error logic.
+2. Update cli.js and/or lib/output.js to integrate new error handling.
+3. Add or update tests in test/errors.test.js, test/output.test.js, or test/exit-codes.test.js.
+4. Document changes in _bmad-output/implementation-artifacts/{story}.md and sprint-status.yaml.
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~2x per month
+- Files: lib/errors.js, lib/exit-codes.js, lib/output.js
+
+---
+id: bmad-expert-instinct-file-naming
+trigger: "When creating or renaming a file."
+confidence: 0.9
+domain: code-style
+source: repo-analysis
+source_repo: HuaqingAI/bmad-expert
+---
+
+# Bmad Expert Instinct File Naming
+
+## Action
+
+Use kebab-case for file names.
+
+## Evidence
+
+- Pattern in codeStyle.namingConventions.files
+- All file examples use kebab-case
+
+---
+id: bmad-expert-instinct-function-naming
+trigger: "When defining a function."
+confidence: 0.9
+domain: code-style
+source: repo-analysis
+source_repo: HuaqingAI/bmad-expert
+---
+
+# Bmad Expert Instinct Function Naming
+
+## Action
+
+Use camelCase for function names.
+
+## Evidence
+
+- Pattern in codeStyle.namingConventions.functions
+
+---
+id: bmad-expert-instinct-class-naming
+trigger: "When defining a class."
+confidence: 0.9
+domain: code-style
+source: repo-analysis
+source_repo: HuaqingAI/bmad-expert
+---
+
+# Bmad Expert Instinct Class Naming
+
+## Action
+
+Use PascalCase for class names.
+
+## Evidence
+
+- Pattern in codeStyle.namingConventions.classes
+
+---
+id: bmad-expert-instinct-constant-naming
+trigger: "When defining a constant."
+confidence: 0.9
+domain: code-style
+source: repo-analysis
+source_repo: HuaqingAI/bmad-expert
+---
+
+# Bmad Expert Instinct Constant Naming
+
+## Action
+
+Use SCREAMING_SNAKE_CASE for constant names.
+
+## Evidence
+
+- Pattern in codeStyle.namingConventions.constants
+
+---
+id: bmad-expert-instinct-import-style
+trigger: "When importing modules."
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: HuaqingAI/bmad-expert
+---
+
+# Bmad Expert Instinct Import Style
+
+## Action
+
+Use relative import paths.
+
+## Evidence
+
+- Pattern in codeStyle.importStyle
+
+---
+id: bmad-expert-instinct-export-style
+trigger: "When exporting from a module."
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: HuaqingAI/bmad-expert
+---
+
+# Bmad Expert Instinct Export Style
+
+## Action
+
+Use named exports.
+
+## Evidence
+
+- Pattern in codeStyle.exportStyle
+
+---
+id: bmad-expert-instinct-test-file-pattern
+trigger: "When creating a test file."
+confidence: 0.9
+domain: testing
+source: repo-analysis
+source_repo: HuaqingAI/bmad-expert
+---
+
+# Bmad Expert Instinct Test File Pattern
+
+## Action
+
+Name the file with a .test.js suffix.
+
+## Evidence
+
+- Pattern in testing.filePattern
+- Examples: test/errors.test.js
+
+---
+id: bmad-expert-instinct-testing-framework
+trigger: "When writing tests."
+confidence: 0.9
+domain: testing
+source: repo-analysis
+source_repo: HuaqingAI/bmad-expert
+---
+
+# Bmad Expert Instinct Testing Framework
+
+## Action
+
+Use Vitest as the testing framework.
+
+## Evidence
+
+- Pattern in testing.framework
+
+---
+id: bmad-expert-instinct-mocking
+trigger: "When mocking modules in tests."
+confidence: 0.8
+domain: testing
+source: repo-analysis
+source_repo: HuaqingAI/bmad-expert
+---
+
+# Bmad Expert Instinct Mocking
+
+## Action
+
+Use vi.mock for mocking.
+
+## Evidence
+
+- Pattern in testing.mockingStyle
+
+---
+id: bmad-expert-instinct-test-types
+trigger: "When writing tests."
+confidence: 0.8
+domain: testing
+source: repo-analysis
+source_repo: HuaqingAI/bmad-expert
+---
+
+# Bmad Expert Instinct Test Types
+
+## Action
+
+Include both unit and integration tests.
+
+## Evidence
+
+- Pattern in testing.testTypes
+
+---
+id: bmad-expert-instinct-test-coverage
+trigger: "When configuring tests."
+confidence: 0.8
+domain: testing
+source: repo-analysis
+source_repo: HuaqingAI/bmad-expert
+---
+
+# Bmad Expert Instinct Test Coverage
+
+## Action
+
+Enable test coverage reporting.
+
+## Evidence
+
+- Pattern in testing.coverageConfig
+
+---
+id: bmad-expert-instinct-commit-prefix
+trigger: "When writing a commit message."
+confidence: 0.9
+domain: git
+source: repo-analysis
+source_repo: HuaqingAI/bmad-expert
+---
+
+# Bmad Expert Instinct Commit Prefix
+
+## Action
+
+Start the commit message with a conventional prefix: feat, fix, chore, docs, or test.
+
+## Evidence
+
+- Pattern in commits.prefixes
+- Seen in commit: feat(errors): add wrapNetworkError for E005 network error fallback infrastructure
+
+---
+id: bmad-expert-instinct-commit-format
+trigger: "When writing a commit message."
+confidence: 0.9
+domain: git
+source: repo-analysis
+source_repo: HuaqingAI/bmad-expert
+---
+
+# Bmad Expert Instinct Commit Format
+
+## Action
+
+Format commit as <type>(<scope>): <description>.
+
+## Evidence
+
+- Pattern in commit examples
+- Seen in: fix(agent): move BMAD init from session startup to on-demand file
+
+---
+id: bmad-expert-instinct-implement-story-feature
+trigger: "When implementing a new story or feature (e.g., error handling, install flow, agent logic)."
+confidence: 0.98
+domain: workflow
+source: repo-analysis
+source_repo: HuaqingAI/bmad-expert
+---
+
+# Bmad Expert Instinct Implement Story Feature
+
+## Action
+
+Create or update _bmad-output/implementation-artifacts/{story}.md, update sprint-status.yaml, modify core logic files, and update/add corresponding test files.
+
+## Evidence
+
+- Workflow: implement-story-feature-with-traceable-artifacts-tests
+- Example commit sequences and file patterns
+
+---
+id: bmad-expert-instinct-agent-template-expansion
+trigger: "When adding new agent templates or updating template handling logic."
+confidence: 0.9
+domain: workflow
+source: repo-analysis
+source_repo: HuaqingAI/bmad-expert
+---
+
+# Bmad Expert Instinct Agent Template Expansion
+
+## Action
+
+Create or update agent template files, update lib/installer.js for template logic, and update/add related tests.
+
+## Evidence
+
+- Workflow: agent-template-and-boilerplate-expansion
+- Example commit sequences and file patterns
+
+---
+id: bmad-expert-instinct-ci-cd-pipeline-update
+trigger: "When setting up or modifying CI/CD pipelines."
+confidence: 0.85
+domain: workflow
+source: repo-analysis
+source_repo: HuaqingAI/bmad-expert
+---
+
+# Bmad Expert Instinct Ci Cd Pipeline Update
+
+## Action
+
+Create or update .github/workflows/ci.yml and publish.yml, update package.json/README.md, and document changes in artifacts.
+
+## Evidence
+
+- Workflow: ci-cd-pipeline-update
+- Example commit sequences and file patterns
+
+---
+id: bmad-expert-instinct-sprint-status-tracking
+trigger: "When marking a story as done, in-progress, or reviewed, or adding new story specs."
+confidence: 0.95
+domain: workflow
+source: repo-analysis
+source_repo: HuaqingAI/bmad-expert
+---
+
+# Bmad Expert Instinct Sprint Status Tracking
+
+## Action
+
+Update sprint-status.yaml, add or update story spec/review files, and optionally update planning artifacts.
+
+## Evidence
+
+- Workflow: sprint-status-and-story-spec-tracking
+- Example commit sequences and file patterns
+
+---
+id: bmad-expert-instinct-error-handling-expansion
+trigger: "When adding new error types, exit codes, or error output logic."
+confidence: 0.9
+domain: workflow
+source: repo-analysis
+source_repo: HuaqingAI/bmad-expert
+---
+
+# Bmad Expert Instinct Error Handling Expansion
+
+## Action
+
+Update or create error logic files, integrate with cli/output, add or update tests, and document in artifacts.
+
+## Evidence
+
+- Workflow: error-handling-module-expansion
+- Example commit sequences and file patterns
+
