@@ -61,6 +61,21 @@ const CODE_TO_EXIT = {
   E006: EXIT_CODES.ALREADY_INSTALLED,
 }
 
+// Node.js 版本检查（E003）— 必须在 parseAsync 之前执行
+const nodeVersion = process.versions.node
+const [nodeMajor, nodeMinor] = nodeVersion.split('.').map(Number)
+if (nodeMajor < 20 || (nodeMajor === 20 && nodeMinor < 19)) {
+  printError(
+    new BmadError(
+      'E003',
+      `依赖缺失: Node.js 版本不足（当前 v${nodeVersion}，需要 ≥20.19.0）`,
+      null,
+      ['升级 Node.js 至 20.19+ 或更高版本']
+    )
+  )
+  process.exit(EXIT_CODES.MISSING_DEPENDENCY)
+}
+
 program.parseAsync().catch(err => {
   if (err instanceof BmadError && err.bmadCode === 'E006') {
     // ALREADY_INSTALLED 是正常状态：消息已由 checkInstallStatus 打印到 stdout
