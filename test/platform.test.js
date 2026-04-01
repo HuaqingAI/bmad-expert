@@ -62,6 +62,19 @@ describe('lib/platform.js', () => {
       expect(err).toBeInstanceOf(BmadError)
     })
 
+    it('无效 platform E002 包含 fixSteps（含三个支持平台名）', async () => {
+      const err = await detectPlatform('unknown-platform').catch((e) => e)
+      expect(err.fixSteps).toHaveLength(1)
+      expect(err.fixSteps[0]).toContain('happycapy')
+      expect(err.fixSteps[0]).toContain('cursor')
+      expect(err.fixSteps[0]).toContain('claude-code')
+    })
+
+    it('无效 platform E002 的 retryable 为 false', async () => {
+      const err = await detectPlatform('unknown-platform').catch((e) => e)
+      expect(err.retryable).toBe(false)
+    })
+
     // 自动检测路径
     it('自动检测：CAPY_USER_ID 非空时返回 happycapy', async () => {
       vi.stubEnv('CAPY_USER_ID', 'test-user-id')

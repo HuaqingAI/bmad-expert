@@ -69,6 +69,36 @@ describe('BmadError', () => {
   })
 })
 
+describe('BmadError E002 场景', () => {
+  it('E002 retryable=false 且支持传入 fixSteps', () => {
+    const err = new BmadError("E002", "无效参数: --platform 值 'xxx' 不被支持", null, [
+      '使用支持的平台值：happycapy, cursor, claude-code',
+    ])
+    expect(err.bmadCode).toBe('E002')
+    expect(err.retryable).toBe(false)
+    expect(err.fixSteps).toHaveLength(1)
+    expect(err.fixSteps[0]).toContain('happycapy')
+  })
+})
+
+describe('BmadError E003 场景', () => {
+  it('E003 bmadCode 正确且 retryable=false', () => {
+    const err = new BmadError('E003', '依赖缺失: Node.js 版本不足（当前 v18.0.0，需要 ≥20.19.0）', null, [
+      '升级 Node.js 至 20.19+ 或更高版本',
+    ])
+    expect(err.bmadCode).toBe('E003')
+    expect(err.retryable).toBe(false)
+  })
+
+  it('E003 fixSteps 可传入且包含升级指令', () => {
+    const err = new BmadError('E003', '依赖缺失: Node.js 版本不足（当前 v18.0.0，需要 ≥20.19.0）', null, [
+      '升级 Node.js 至 20.19+ 或更高版本',
+    ])
+    expect(err.fixSteps).toHaveLength(1)
+    expect(err.fixSteps[0]).toContain('20.19')
+  })
+})
+
 describe('BmadError fixSteps', () => {
   it('传入 fixSteps 数组时正确保存', () => {
     const fixSteps = ['步骤一：执行 X', '步骤二：执行 Y']

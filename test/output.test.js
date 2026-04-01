@@ -170,6 +170,34 @@ describe('output.js', () => {
       expect(written).toContain('修复步骤：')
     })
 
+    it('E002 完整 Schema 格式验证', () => {
+      const err = new BmadError("E002", "无效参数: --platform 值 'unknown' 不被支持", null, [
+        '使用支持的平台值：happycapy, cursor, claude-code',
+      ])
+      printError(err)
+      const written = stderrSpy.mock.calls.map(c => c[0]).join('')
+      expect(written).toContain('ERROR [E002]')
+      expect(written).toContain("--platform 值 'unknown' 不被支持")
+      expect(written).toContain('修复步骤：')
+      expect(written).toContain('使用支持的平台值')
+      expect(written).toContain('可重试：否')
+      expect(stdoutSpy).not.toHaveBeenCalled()
+    })
+
+    it('E003 完整 Schema 格式验证', () => {
+      const err = new BmadError('E003', '依赖缺失: Node.js 版本不足（当前 v18.0.0，需要 ≥20.19.0）', null, [
+        '升级 Node.js 至 20.19+ 或更高版本',
+      ])
+      printError(err)
+      const written = stderrSpy.mock.calls.map(c => c[0]).join('')
+      expect(written).toContain('ERROR [E003]')
+      expect(written).toContain('Node.js 版本不足')
+      expect(written).toContain('修复步骤：')
+      expect(written).toContain('升级 Node.js')
+      expect(written).toContain('可重试：否')
+      expect(stdoutSpy).not.toHaveBeenCalled()
+    })
+
     it('E004 完整 Schema 格式验证', () => {
       const err = new BmadError('E004', '文件写入失败（权限不足）', new Error('沙盒限制写入路径 /path'), [
         '手动创建并授权目标目录：mkdir -p ~/.happycapy/agents/bmad-expert',
