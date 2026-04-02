@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-03-23T00:00:00Z
-last_updated: 2026-04-01T05:00:00Z
+last_updated: 2026-04-02T00:00:00Z
 project: bmad-expert
 project_key: NOKEY
 tracking_system: file-system
@@ -70,17 +70,17 @@ development_status:
   epic-4: in-progress
   4-1-persistent-config-session-detection: review
   4-2-bootstrap-file-self-destruct: review
-  4-3-install-integration-validation: backlog
+  4-3-install-integration-validation: review
   epic-4-retrospective: optional
 
   # Epic 5：Onboarding 文档与平台可发现性
-  epic-5: backlog
-  5-1-zero-background-readme: backlog
+  epic-5: done
+  5-1-zero-background-readme: done
   epic-5-retrospective: optional
 
   # Epic 6：安全更新与状态管理（Growth）
   epic-6: in-progress
   6-1-update-command-data-protection: done
   6-2-status-command-health-check: review
-  6-3-json-output-mode: backlog
+  6-3-json-output-mode: review
   epic-6-retrospective: optional

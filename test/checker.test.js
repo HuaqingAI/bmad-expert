@@ -57,8 +57,9 @@ describe('checkStatus', () => {
       fsMock.pathExists.mockResolvedValue(true)
     })
 
-    it('所有文件存在时不抛出异常', async () => {
-      await expect(checkStatus()).resolves.toBeUndefined()
+    it('所有文件存在时不抛出异常，返回含 status:healthy 的结果对象', async () => {
+      const result = await checkStatus()
+      expect(result).toMatchObject({ status: 'healthy' })
     })
 
     it('printSuccess 含版本号', async () => {
