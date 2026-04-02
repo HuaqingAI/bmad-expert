@@ -5,7 +5,7 @@ import { fileURLToPath } from 'url'
 import { dirname, join } from 'path'
 import { EXIT_CODES } from './lib/exit-codes.js'
 import { BmadError } from './lib/errors.js'
-import { printError } from './lib/output.js'
+import { printError, printJSON, setJsonMode, getJsonMode } from './lib/output.js'
 import { install } from './lib/installer.js'
 import { update } from './lib/updater.js'
 
@@ -25,12 +25,17 @@ program
   .option('--platform <name>', '指定目标平台（happycapy/cursor/claude-code）')
   .option('--agent-id <id>', 'Agent 标识符', 'bmad-expert')
   .option('--yes', '非交互模式，跳过所有确认提示')
+  .option('--json', '输出结构化 JSON 结果（AI 调用专用）')
   .action(async (options) => {
-    await install({
+    if (options.json) setJsonMode(true)
+    const result = await install({
       platform: options.platform ?? null,
       agentId: options.agentId,
       yes: options.yes ?? false,
     })
+    if (options.json) {
+      printJSON({ success: true, ...result })
+    }
   })
 
 program
@@ -38,16 +43,22 @@ program
   .description('安全更新框架文件，保留用户 memory 与个性化配置（Growth）')
   .option('--platform <name>', '指定目标平台（happycapy/cursor/claude-code）')
   .option('--agent-id <id>', 'Agent 标识符', 'bmad-expert')
+  .option('--json', '输出结构化 JSON 结果（AI 调用专用）')
   .action(async (options) => {
-    await update({
+    if (options.json) setJsonMode(true)
+    const result = await update({
       platform: options.platform ?? null,
       agentId: options.agentId,
     })
+    if (options.json) {
+      printJSON({ success: true, ...result })
+    }
   })
 
 program
   .command('status')
   .description('检查当前安装健康度（Growth）')
+  .option('--json', '输出结构化 JSON 结果（AI 调用专用）')
   .action(() => {
     // TODO: Story 6.2 实现
   })
@@ -77,7 +88,34 @@ if (nodeMajor < 20 || (nodeMajor === 20 && nodeMinor < 19)) {
 }
 
 program.parseAsync().catch(err => {
-  if (err instanceof BmadError && err.bmadCode === 'E006') {
+  if (getJsonMode()) {
+    // JSON 模式：所有输出（含错误）走 stdout，stderr 保持空白（FR40）
+    if (err instanceof BmadError && err.bmadCode === 'E006') {
+      printJSON({ success: true, alreadyInstalled: true })
+      process.exit(EXIT_CODES.ALREADY_INSTALLED)
+    }
+    const errorJson = err instanceof BmadError
+      ? {
+          success: false,
+          errorCode: err.bmadCode,
+          errorMessage: err.message,
+          fixSteps: err.fixSteps ?? [],
+          retryable: err.retryable ?? false,
+        }
+      : {
+          success: false,
+          errorCode: 'E001',
+          errorMessage: err.message,
+          fixSteps: [],
+          retryable: false,
+        }
+    printJSON(errorJson)
+    process.exit(
+      err instanceof BmadError
+        ? (CODE_TO_EXIT[err.bmadCode] ?? EXIT_CODES.GENERAL_ERROR)
+        : EXIT_CODES.GENERAL_ERROR
+    )
+  } else if (err instanceof BmadError && err.bmadCode === 'E006') {
     // ALREADY_INSTALLED 是正常状态：消息已由 checkInstallStatus 打印到 stdout
     // 不走 printError（不是真正的错误），直接以 exit code 6 退出
     process.exit(EXIT_CODES.ALREADY_INSTALLED)

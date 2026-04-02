@@ -1,16 +1,18 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { printProgress, printSuccess, printError } from '../lib/output.js'
+import { printProgress, printSuccess, printError, setJsonMode, getJsonMode, printJSON } from '../lib/output.js'
 import { BmadError } from '../lib/errors.js'
 
 describe('output.js', () => {
   let stdoutSpy, stderrSpy
 
   beforeEach(() => {
+    setJsonMode(false) // 每次重置 JSON 模式，防止测试间状态污染
     stdoutSpy = vi.spyOn(process.stdout, 'write').mockImplementation(() => true)
     stderrSpy = vi.spyOn(process.stderr, 'write').mockImplementation(() => true)
   })
 
   afterEach(() => {
+    setJsonMode(false)
     vi.restoreAllMocks()
   })
 
@@ -230,6 +232,87 @@ describe('output.js', () => {
       expect(written).toContain('代理设置')
       expect(written).toContain('可重试：是')
       expect(stdoutSpy).not.toHaveBeenCalled()
+    })
+  })
+
+  // ─── Story 6.3：JSON 模式新增测试 ──────────────────────────────────────────
+
+  describe('setJsonMode / getJsonMode（Story 6.3）', () => {
+    it('默认 getJsonMode() 返回 false', () => {
+      expect(getJsonMode()).toBe(false)
+    })
+
+    it('setJsonMode(true) 后 getJsonMode() 返回 true', () => {
+      setJsonMode(true)
+      expect(getJsonMode()).toBe(true)
+    })
+
+    it('setJsonMode(false) 还原 JSON 模式', () => {
+      setJsonMode(true)
+      setJsonMode(false)
+      expect(getJsonMode()).toBe(false)
+    })
+  })
+
+  describe('printJSON（Story 6.3）', () => {
+    it('写入 stdout，不写 stderr', () => {
+      printJSON({ success: true })
+      expect(stdoutSpy).toHaveBeenCalledTimes(1)
+      expect(stderrSpy).not.toHaveBeenCalled()
+    })
+
+    it('输出为合法 JSON 字符串加换行', () => {
+      const data = { success: true, platform: 'happycapy', duration: 5 }
+      printJSON(data)
+      const written = stdoutSpy.mock.calls[0][0]
+      expect(written).toBe(JSON.stringify(data) + '\n')
+      expect(() => JSON.parse(written)).not.toThrow()
+    })
+
+    it('输出的 JSON 可正确解析出所有字段', () => {
+      const data = { success: false, errorCode: 'E004', retryable: true, fixSteps: ['步骤1'] }
+      printJSON(data)
+      const parsed = JSON.parse(stdoutSpy.mock.calls[0][0])
+      expect(parsed).toMatchObject(data)
+    })
+  })
+
+  describe('printProgress JSON 模式沉默（Story 6.3）', () => {
+    it('jsonMode=true 时 printProgress 不写 stdout 也不写 stderr', () => {
+      setJsonMode(true)
+      printProgress('正在检测平台...')
+      expect(stdoutSpy).not.toHaveBeenCalled()
+      expect(stderrSpy).not.toHaveBeenCalled()
+    })
+
+    it('jsonMode=true 时 printProgress(done=true) 不写任何流', () => {
+      setJsonMode(true)
+      printProgress('', true)
+      expect(stdoutSpy).not.toHaveBeenCalled()
+      expect(stderrSpy).not.toHaveBeenCalled()
+    })
+
+    it('setJsonMode(false) 后 printProgress 恢复正常写 stdout', () => {
+      setJsonMode(true)
+      setJsonMode(false)
+      printProgress('恢复写入')
+      expect(stdoutSpy).toHaveBeenCalled()
+    })
+  })
+
+  describe('printSuccess JSON 模式沉默（Story 6.3）', () => {
+    it('jsonMode=true 时 printSuccess 不写 stdout 也不写 stderr', () => {
+      setJsonMode(true)
+      printSuccess('安装完成')
+      expect(stdoutSpy).not.toHaveBeenCalled()
+      expect(stderrSpy).not.toHaveBeenCalled()
+    })
+
+    it('setJsonMode(false) 后 printSuccess 恢复正常写 stdout', () => {
+      setJsonMode(true)
+      setJsonMode(false)
+      printSuccess('安装完成')
+      expect(stdoutSpy).toHaveBeenCalled()
     })
   })
 })
