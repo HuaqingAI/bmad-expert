@@ -1,6 +1,14 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { install } from '../../lib/installer.js'
 import { BmadError } from '../../lib/errors.js'
+import { readFileSync } from 'node:fs'
+import { fileURLToPath } from 'url'
+import { dirname, join, basename } from 'path'
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = dirname(__filename)
+// agent/ 模板目录，相对 test/integration/ 向上两级
+const AGENT_DIR = join(__dirname, '../../agent')
 
 // ── 模块 Mock ──────────────────────────────────────────────────────────────
 vi.mock('fs-extra', () => ({
@@ -107,5 +115,73 @@ describe('HappyCapy 完整安装流程（集成测试）', () => {
     expect(printSuccess).toHaveBeenCalled()
     const msg = printSuccess.mock.calls.at(-1)?.[0] ?? ''
     expect(msg).toContain('bmad-expert 已就绪')
+  })
+
+  // ── 文件内容验证套件 ────────────────────────────────────────────────────────
+  describe('安装文件内容验证', () => {
+    let writtenFiles
+
+    beforeEach(async () => {
+      vi.clearAllMocks()
+      vi.stubEnv('CAPY_USER_ID', 'test-user-123')
+
+      writtenFiles = {}
+
+      const fsExtra = (await import('fs-extra')).default
+      fsExtra.pathExists.mockResolvedValue(false)
+
+      // readFile mock：按文件名返回真实模板内容，触发实际变量替换逻辑
+      fsExtra.readFile.mockImplementation(async (filePath) => {
+        return readFileSync(join(AGENT_DIR, basename(filePath)), 'utf8')
+      })
+
+      // outputFile mock：捕获写入内容供断言使用
+      fsExtra.outputFile.mockImplementation(async (filePath, content) => {
+        writtenFiles[basename(filePath)] = content
+      })
+
+      const { execa } = await import('execa')
+      execa.mockResolvedValue({ exitCode: 0 })
+    })
+
+    afterEach(() => {
+      vi.unstubAllEnvs()
+    })
+
+    it('文件数量：写入 5 个框架文件', async () => {
+      await install({ platform: null, agentId: 'bmad-expert', yes: false })
+
+      const expectedFiles = ['SOUL.md', 'IDENTITY.md', 'AGENTS.md', 'BOOTSTRAP.md', 'bmad-project-init.md']
+      expect(Object.keys(writtenFiles)).toHaveLength(5)
+      for (const file of expectedFiles) {
+        expect(Object.keys(writtenFiles), `${file} 未被写入`).toContain(file)
+      }
+    })
+
+    it('占位符替换：所有写入文件无残留 {{...}}', async () => {
+      await install({ platform: null, agentId: 'bmad-expert', yes: false })
+
+      for (const [filename, content] of Object.entries(writtenFiles)) {
+        expect(content, `${filename} 中存在未替换的占位符`).not.toMatch(/\{\{.*?\}\}/)
+      }
+    })
+
+    it('AGENTS.md 内容：含 Session Startup 与 BOOTSTRAP.md 检测逻辑', async () => {
+      await install({ platform: null, agentId: 'bmad-expert', yes: false })
+
+      const agentsContent = writtenFiles['AGENTS.md']
+      expect(agentsContent).toBeDefined()
+      expect(agentsContent).toContain('Session Startup')
+      expect(agentsContent).toContain('BOOTSTRAP.md')
+    })
+
+    it('BOOTSTRAP.md 内容：含自毁指令与 bmad-help 跳转', async () => {
+      await install({ platform: null, agentId: 'bmad-expert', yes: false })
+
+      const bootstrapContent = writtenFiles['BOOTSTRAP.md']
+      expect(bootstrapContent).toBeDefined()
+      expect(bootstrapContent).toContain('rm -f')
+      expect(bootstrapContent).toContain('bmad-help')
+    })
   })
 })
