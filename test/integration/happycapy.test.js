@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { install } from '../../lib/installer.js'
-import { BmadError } from '../../lib/errors.js'
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'url'
 import { dirname, join, basename } from 'path'

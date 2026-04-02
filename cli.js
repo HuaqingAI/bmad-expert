@@ -8,6 +8,7 @@ import { BmadError } from './lib/errors.js'
 import { printError, printJSON, setJsonMode, getJsonMode } from './lib/output.js'
 import { install } from './lib/installer.js'
 import { update } from './lib/updater.js'
+import { checkStatus } from './lib/checker.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const pkg = JSON.parse(readFileSync(join(__dirname, 'package.json'), 'utf8'))
@@ -58,9 +59,18 @@ program
 program
   .command('status')
   .description('检查当前安装健康度（Growth）')
+  .option('--platform <name>', '指定目标平台（happycapy/cursor/claude-code）')
+  .option('--agent-id <id>', 'Agent 标识符', 'bmad-expert')
   .option('--json', '输出结构化 JSON 结果（AI 调用专用）')
-  .action(() => {
-    // TODO: Story 6.2 实现
+  .action(async (options) => {
+    if (options.json) setJsonMode(true)
+    const result = await checkStatus({
+      platform: options.platform ?? null,
+      agentId: options.agentId,
+    })
+    if (options.json) {
+      printJSON({ success: true, ...result })
+    }
   })
 
 const CODE_TO_EXIT = {
