@@ -1,0 +1,21 @@
+# 开发产物（不发布到 npm）
+_bmad-output/
+_bmad/
+.opencode/
+.github/
+test/
+workflow/
+docs/
+
+# 编辑器 & 系统文件
+.DS_Store
+*.log
+
+# Agent 文件（运行时由 installer 写入目标平台，不随包分发）
+AGENTS.md
+SOUL.md
+IDENTITY.md
+MEMORY.md
+USER.md
+BOOTSTRAP.md
+story-dev-workflow.md
