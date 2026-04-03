@@ -23,16 +23,30 @@ program
 program
   .command('install')
   .description('平台感知完整安装 BMAD agent')
-  .option('--platform <name>', '指定目标平台（happycapy/cursor/claude-code）')
+  .option('--platform <name>', '指定目标平台（happycapy/openclaw/claude-code/codex）')
   .option('--agent-id <id>', 'Agent 标识符', 'bmad-expert')
   .option('--yes', '非交互模式，跳过所有确认提示')
   .option('--json', '输出结构化 JSON 结果（AI 调用专用）')
+  // Phase 2 参数（Story 7.1 新增，Story 7.3 中 installer.js 接入两阶段调用链时消费）
+  .option('--modules <modules>', 'BMAD 安装模块（覆盖智能推断，如 bmm 或 bmm,bmb）')
+  .option('--tools <tools>', 'BMAD 工具链（覆盖智能推断，如 claude-code）')
+  .option('--communication-language <lang>', 'BMAD 通讯语言（覆盖智能推断）')
+  .option('--output-folder <path>', 'BMAD 输出目录（覆盖智能推断）')
+  .option('--user-name <name>', '用户名称（传入 BMAD 安装器）')
+  .option('--action <type>', 'BMAD 安装器动作类型（默认 install）')
   .action(async (options) => {
     if (options.json) setJsonMode(true)
     const result = await install({
       platform: options.platform ?? null,
       agentId: options.agentId,
       yes: options.yes ?? false,
+      // Phase 2 参数（Story 7.3 中 installer.js 会消费）
+      modules: options.modules ?? null,
+      tools: options.tools ?? null,
+      communicationLanguage: options.communicationLanguage ?? null,
+      outputFolder: options.outputFolder ?? null,
+      userName: options.userName ?? null,
+      action: options.action ?? null,
     })
     if (options.json) {
       printJSON({ success: true, ...result })

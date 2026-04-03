@@ -1,5 +1,5 @@
 ---
-stepsCompleted: ['step-01-init', 'step-02-discovery', 'step-02b-vision', 'step-02c-executive-summary', 'step-03-success', 'step-04-journeys', 'step-05-domain', 'step-06-innovation', 'step-07-project-type', 'step-08-scoping', 'step-09-functional', 'step-10-nonfunctional', 'step-11-polish']
+stepsCompleted: ['step-01-init', 'step-02-discovery', 'step-02b-vision', 'step-02c-executive-summary', 'step-03-success', 'step-04-journeys', 'step-05-domain', 'step-06-innovation', 'step-07-project-type', 'step-08-scoping', 'step-09-functional', 'step-10-nonfunctional', 'step-11-polish', 'step-e-01-discovery', 'step-e-02-review', 'step-e-03-edit']
 classification:
   projectType: 'cli_tool+developer_tool'
   domain: 'developer-tooling'
@@ -12,11 +12,17 @@ inputDocuments:
   - '_bmad-output/planning-artifacts/research/technical-agent-install-and-bmad-extension-research-2026-03-23.md'
   - '_bmad-output/planning-artifacts/research/README.md'
   - '_bmad-output/brainstorming/brainstorming-session-2026-03-23-0930.md'
+  - '_bmad-output/implementation-artifacts/bmm-retrospective-2026-04-02.md'
 workflowType: 'prd'
+workflow: 'edit'
 briefCount: 0
 researchCount: 5
 brainstormingCount: 1
 projectDocsCount: 0
+lastEdited: '2026-04-02'
+editHistory:
+  - date: '2026-04-02'
+    changes: 'Phase 2 扩展：安装编排重构（委托 bmad-method install）、多平台扩展（OpenClaw/Claude Code/Codex）、自动检测、智能参数构建。新增 FR41-FR50、NFR14-15、Journey 6、Innovation 第5项。路线图重构：Phase 1/1.5 标为已完成，新 Phase 2 合并原 Phase 1.5 + 安装重构 + 自动检测。'
 ---
 
 # Product Requirements Document - bmad-expert
@@ -26,20 +32,21 @@ projectDocsCount: 0
 
 ## Executive Summary
 
-bmad-expert 是一个以 npm 包形式分发的 BMAD Agent 安装器与新手教练。它面向在 HappyCapy、OpenClaw 等非 terminal 型 AI 平台上使用 BMAD 方法论的用户，解决"想用 BMAD 但不会装、装了不会用"的核心痛点。产品承诺三件事：开箱即用、不出错、高质量产出。
+bmad-expert 是一个以 npm 包形式分发的 BMAD 智能安装编排器。它面向在 HappyCapy、OpenClaw、Claude Code、Codex 等 AI 平台上使用 BMAD 方法论的用户，解决"想用 BMAD 但不会装、装了不会用"的核心痛点。产品承诺三件事：开箱即用、不出错、高质量产出。
 
 目标用户为非技术背景或不熟悉 CLI 操作的 AI 工具使用者，他们因 OpenClaw 等平台爆火而接触到专业 AI 工作流，但缺乏能力或意愿手动配置复杂工具链。
 
-核心交付物：通过 `npx bmad-expert install` 一条命令完成跨平台 BMAD 安装，通过 `npx bmad-expert update` 安全更新而不丢失用户状态；同时内置新手引导能力，降低 BMAD 方法论的首次使用门槛。
+核心交付物：通过 `npx bmad-expert install` 一条命令完成跨平台 BMAD 安装，通过 `npx bmad-expert update` 安全更新而不丢失用户状态；同时内置新手引导能力，降低 BMAD 方法论的首次使用门槛。bmad-expert 作为 BMAD 官方安装器（`npx bmad-method install`）的智能前端，根据目标平台和项目上下文自动构建最优安装参数，委托官方安装器执行核心安装，确保安装结果始终对齐 BMAD 最新版本。
 
 ### What Makes This Special
 
 现有 BMAD 安装流程依赖 terminal 熟练度，与 HappyCapy、OpenClaw 等"零 terminal"使用场景天然不兼容。bmad-expert 的核心洞察是：**安装即产品**——安装过程本身必须是零失败的产品级体验，而非技术操作。
 
-差异化来自三点：
-1. **平台感知安装**：不只是文件复制，而是感知目标平台注册机制并完成完整安装契约
-2. **install/update 分离**：保护用户积累的记忆与个性化配置，更新不破坏现有状态
-3. **新手教练内核**：不替代 bmad-help，不做路由器，专注降低 BMAD 方法论的认知门槛
+差异化来自四点：
+1. **智能安装编排**：不自行复制文件，而是根据平台和项目上下文智能构建参数，委托 `npx bmad-method install` 执行，动态获取 BMAD 最新版本
+2. **多平台感知安装**：自动检测目标平台（HappyCapy / OpenClaw / Claude Code / Codex），感知注册机制并完成完整安装契约，无需用户指定 `--platform`
+3. **install/update 分离**：保护用户积累的记忆与个性化配置，更新不破坏现有状态
+4. **新手教练内核**：不替代 bmad-help，不做路由器，专注降低 BMAD 方法论的认知门槛
 
 ## Project Classification
 
@@ -62,7 +69,7 @@ bmad-expert 是一个以 npm 包形式分发的 BMAD Agent 安装器与新手教
 
 - **内部采用率**：团队 8 人中 6 人在第一个月内主动使用（可根据实际团队规模调整比例）
 - **7 天留存**：安装后 7 天内，用户成功完成至少一个完整 BMAD 工作流的比例 ≥ 70%
-- **优先平台覆盖**：HappyCapy、OpenClaw、Claude Code 三个平台均支持且体验一致
+- **优先平台覆盖**：HappyCapy、OpenClaw、Claude Code、Codex 四个平台均支持且体验一致
 
 ### Technical Success
 
@@ -71,6 +78,7 @@ bmad-expert 是一个以 npm 包形式分发的 BMAD Agent 安装器与新手教
 - **平台感知**：自动识别目标平台并完成对应注册机制
 - **平台独立集成测试**：每个支持平台有独立的集成测试覆盖，保证 99% 不是空头数字
 - **BOOTSTRAP 零追问标准**：BOOTSTRAP 流程必须能引导用户完成全部初始化步骤，不依赖任何追加问答
+- **安装参数智能构建**：系统根据平台和项目上下文自动构建 BMAD 官方安装器参数，安装结果对齐 BMAD 最新版本
 
 ### Measurable Outcomes
 
@@ -80,7 +88,7 @@ bmad-expert 是一个以 npm 包形式分发的 BMAD Agent 安装器与新手教
 | 安装成功率 | ≥ 99% |
 | 首次工作流启动步骤 | 1 句话 |
 | 支持平台数（Phase 1 MVP） | 1（HappyCapy） |
-| 支持平台数（Phase 1.5） | +2（OpenClaw、Claude Code） |
+| 支持平台数（Phase 2） | +3（OpenClaw、Claude Code、Codex） |
 | 7 天工作流完成率 | ≥ 70% |
 | 内部团队月度使用率 | ≥ 75%（6/8 人） |
 
@@ -88,23 +96,33 @@ bmad-expert 是一个以 npm 包形式分发的 BMAD Agent 安装器与新手教
 
 ### MVP - Minimum Viable Product
 
-- `npx bmad-expert install`：平台感知安装，Phase 1 专注 HappyCapy，Phase 1.5 扩展至 OpenClaw、Claude Code
+- `npx bmad-expert install`：平台感知安装，Phase 1 专注 HappyCapy，Phase 2 扩展至 OpenClaw、Claude Code、Codex
 - 一句话激活 + 一句话初始化项目 + 进入 bmad-help
 - 结构化错误信息（AI 可自主 fix）
 - BOOTSTRAP 流程：零追问完成项目 + BMAD 环境初始化
 - 安装完成引导确认信息（情感性确认）
 - 每平台独立集成测试
 
-### Growth Features（Post-MVP）
+### Phase 1.5 Growth（已完成）
 
 - `npx bmad-expert update`：安全更新，保留用户状态与个性化配置
 - `status` 命令：检查安装健康度
 - `--json` 输出：支持 AI caller 可编程调用
-- 扩展模块机制：对齐 BMAD `--modules` 模式
+
+### Phase 2 -- 多平台扩展与安装编排升级
+
+- 安装流程重构：从自行文件复制升级为委托 `npx bmad-method install` 执行，bmad-expert 作为智能编排前端
+- 智能参数构建：根据目标平台和项目上下文自动确定 `--modules`、`--tools`、`--communication-language`、`--output-folder` 等参数
+- 动态版本获取：安装时动态调用 BMAD 官方安装器最新版本，不再内置固定模板文件
+- 多平台自动检测：无需用户指定 `--platform` 参数，自动识别宿主平台
+- OpenClaw 平台适配器（优先）
+- Claude Code 平台适配器
+- Codex（OpenAI）平台适配器
+- 每平台独立集成测试 + 跨平台一致性验证
+- 回顾清债：README 覆盖全部命令、`status --json` 完整实现、FRAMEWORK_FILES 一致性校验
 
 ### Vision（Future）
 
-- 多平台自动检测（无需用户指定 `--platform`）
 - 完整的 BMAD 新手教练流程
 - 卸载命令与回滚机制
 - 全局 agent 多项目内存隔离
@@ -131,11 +149,13 @@ bmad-expert 是一个以 npm 包形式分发的 BMAD Agent 安装器与新手教
 
 **开场：** 小林在 HappyCapy 聊天窗口输入一句话启动安装。
 
-**过程：** AI 调用 `npx bmad-expert install`，工具自动检测 HappyCapy 平台。全程输出实时进度：
+**过程：** AI 调用 `npx bmad-expert install`，工具自动检测 HappyCapy 平台，智能构建安装参数后委托 BMAD 官方安装器执行。全程输出实时进度：
 ```
 正在检测平台... HappyCapy ✓
-正在安装核心模块... ✓
-正在写入配置... ✓
+正在分析项目上下文... ✓
+正在构建安装参数... modules=bmm, tools=none, language=Chinese ✓
+正在执行 BMAD 安装... ✓
+正在写入 bmad-expert agent 文件... ✓
 正在注册 agent... ✓
 安装完成（用时 42 秒）
 ```
@@ -145,7 +165,7 @@ bmad-expert 是一个以 npm 包形式分发的 BMAD Agent 安装器与新手教
 
 **结局：** 小林感受到的是"我会用 BMAD 了"，而不是"我装了个工具"。
 
-**揭示的能力需求：** 平台感知安装、实时进度输出、HappyCapy 注册机制、BOOTSTRAP 零追问、安装后引导确认。
+**揭示的能力需求：** 平台感知安装、智能参数构建、委托 BMAD 官方安装器执行、实时进度输出、HappyCapy 注册机制、BOOTSTRAP 零追问、安装后引导确认。
 
 ---
 
@@ -189,11 +209,11 @@ AI 读取信息，自动执行修复步骤，无需小林介入。
 
 **发现触点：** 团队 lead 在群里发了一句触发命令。
 
-**过程：** 晓雯执行命令，bmad-expert 检测到项目中已有 BMAD 配置，跳过重复安装，直接引导进入 bmad-help 并加载已有项目上下文。
+**过程：** 晓雯执行命令，bmad-expert 自动检测到 OpenClaw 平台（无需指定 `--platform`），发现项目中已有 BMAD 配置，跳过重复安装，直接引导进入 bmad-help 并加载已有项目上下文。
 
 **结局：** 5 分钟内融入团队工作节奏。
 
-**揭示的能力需求：** 环境检测（已有/全新自适应）、OpenClaw 平台支持、已有项目快速接入。
+**揭示的能力需求：** 多平台自动检测、环境检测（已有/全新自适应）、OpenClaw 平台支持、已有项目快速接入。
 
 ---
 
@@ -211,20 +231,38 @@ AI 读取信息，自动执行修复步骤，无需小林介入。
 
 ---
 
+### Journey 6：小杰的新平台（Codex，首次安装）
+
+**人物：** 小杰，全栈开发者，使用 OpenAI Codex 平台。
+
+**发现触点：** 在技术社区看到 BMAD 方法论的介绍文章，想在 Codex 中使用。
+
+**过程：** 小杰在 Codex 中触发安装，bmad-expert 自动检测到 Codex 平台，根据 Codex 环境特性构建安装参数（modules=bmm, tools 根据 Codex 环境自动选择），委托 BMAD 官方安装器完成核心安装，随后写入 bmad-expert 补充 agent 文件并完成 Codex 平台注册。
+
+**结局：** 小杰在 Codex 中获得与 HappyCapy 用户一致的 BMAD 体验。
+
+**揭示的能力需求：** Codex 平台适配器、多平台自动检测、智能参数构建、跨平台体验一致性。
+
+---
+
 ### Journey Requirements Summary
 
-| 能力 | 来源旅程 | MVP/Growth |
+| 能力 | 来源旅程 | Phase |
 |---|---|---|
-| 清晰 README / 单句触发 onboarding | Journey 0 | MVP |
-| HappyCapy / OpenClaw 平台感知安装 | Journey 1, 4 | MVP |
-| 实时进度输出（非沉默等待） | Journey 1 | MVP |
-| BOOTSTRAP 零追问初始化 | Journey 1 | MVP |
-| 安装后情感性确认引导 | Journey 1 | MVP |
-| 权限/沙盒错误处理 + 结构化 fix | Journey 2 | MVP |
-| 幂等安装 + 防重复保护 | Journey 3 | MVP |
-| 环境检测（已有/全新自适应） | Journey 4 | MVP |
-| 版本检查机制 | Journey 5 | Growth |
-| install/update 分离 + 用户状态保护 | Journey 5 | Growth |
+| 清晰 README / 单句触发 onboarding | Journey 0 | Phase 1 MVP |
+| HappyCapy 平台感知安装 | Journey 1 | Phase 1 MVP |
+| 实时进度输出（非沉默等待） | Journey 1 | Phase 1 MVP |
+| BOOTSTRAP 零追问初始化 | Journey 1 | Phase 1 MVP |
+| 安装后情感性确认引导 | Journey 1 | Phase 1 MVP |
+| 权限/沙盒错误处理 + 结构化 fix | Journey 2 | Phase 1 MVP |
+| 幂等安装 + 防重复保护 | Journey 3 | Phase 1 MVP |
+| 环境检测（已有/全新自适应） | Journey 4 | Phase 1 MVP |
+| 版本检查机制 | Journey 5 | Phase 1.5 Growth |
+| install/update 分离 + 用户状态保护 | Journey 5 | Phase 1.5 Growth |
+| 智能参数构建 + 委托 BMAD 官方安装器 | Journey 1, 6 | Phase 2 |
+| 多平台自动检测（无需 --platform） | Journey 4, 6 | Phase 2 |
+| OpenClaw / Claude Code / Codex 平台适配 | Journey 4, 6 | Phase 2 |
+| 跨平台体验一致性 | Journey 6 | Phase 2 |
 
 ## Innovation & Novel Patterns
 
@@ -242,10 +280,13 @@ AI 读取信息，自动执行修复步骤，无需小林介入。
 **4. 无 terminal 平台的 CLI 工具（CLI for No-Terminal Environments）**
 专为 HappyCapy、OpenClaw 等没有 terminal 直接访问权限的 AI 平台设计 CLI 工具。这挑战了"CLI 工具需要 terminal 用户"的基本假设。
 
+**5. 智能安装编排（Smart Install Orchestration）**
+bmad-expert 不自行执行安装的核心逻辑，而是作为 BMAD 官方安装器的智能前端：感知目标平台、分析项目上下文、动态构建最优安装参数，然后委托 `npx bmad-method install` 执行。这一模式确保安装结果始终对齐 BMAD 最新版本，避免了内置固定模板导致的版本滞后；同时将"理解用户需要什么参数"的智能从用户侧转移到工具侧，实现零配置安装。
+
 ### Market Context & Competitive Landscape
 
 - 现有 BMAD 安装方式依赖手动 terminal 操作，与 AI 平台的聊天界面范式不兼容
-- AI 平台（HappyCapy、OpenClaw）用户群体快速扩大，但开发者工具生态尚未适配这一范式
+- AI 平台（HappyCapy、OpenClaw、Codex）用户群体快速扩大，但开发者工具生态尚未适配这一范式
 - 没有已知竞品专门解决"AI 平台上的工具安装体验"这一问题
 - OpenClaw 等平台的爆发式增长创造了时间窗口：先行者可以定义这一品类的标准
 
@@ -272,14 +313,20 @@ bmad-expert 是一个 npm 包形式的 CLI 工具，专为 AI 平台中介执行
 
 ### 命令结构
 
-| 命令 | 状态 | 说明 |
+| 命令 | Phase | 说明 |
 |---|---|---|
-| `npx bmad-expert install` | MVP | 平台感知完整安装 |
-| `npx bmad-expert update` | Growth | 安全更新，保护用户状态 |
-| `npx bmad-expert status` | Growth | 检查安装健康度 |
-| `--platform <name>` | MVP | 指定目标平台（覆盖自动检测） |
-| `--yes` | MVP | 非交互模式，跳过确认提示 |
-| `--json` | Growth | 结构化 JSON 输出供 AI caller 使用 |
+| `npx bmad-expert install` | Phase 1 MVP | 平台感知完整安装 |
+| `npx bmad-expert update` | Phase 1.5 Growth | 安全更新，保护用户状态 |
+| `npx bmad-expert status` | Phase 1.5 Growth | 检查安装健康度 |
+| `--platform <name>` | Phase 1 MVP | 指定目标平台（覆盖自动检测） |
+| `--yes` | Phase 1 MVP | 非交互模式，跳过确认提示 |
+| `--json` | Phase 1.5 Growth | 结构化 JSON 输出供 AI caller 使用 |
+| `--modules <modules>` | Phase 2 | 透传至 BMAD 官方安装器的模块选择参数（默认智能推断） |
+| `--tools <tools>` | Phase 2 | 透传至 BMAD 官方安装器的工具/IDE 参数（默认根据平台自动选择） |
+| `--communication-language <lang>` | Phase 2 | 透传至 BMAD 官方安装器的交互语言参数（默认智能推断） |
+| `--output-folder <path>` | Phase 2 | 透传至 BMAD 官方安装器的产出目录参数（默认智能推断） |
+| `--user-name <name>` | Phase 2 | 透传至 BMAD 官方安装器的用户名参数（默认使用平台用户标识） |
+| `--action <type>` | Phase 2 | 透传至 BMAD 官方安装器的执行模式（install/update/quick-update，默认根据命令自动确定） |
 
 ### 输出格式
 
@@ -288,8 +335,10 @@ bmad-expert 是一个 npm 包形式的 CLI 工具，专为 AI 平台中介执行
 
 ### 配置机制
 
-- **平台自动检测**：运行时检测宿主环境（HappyCapy / OpenClaw / Claude Code）
+- **平台自动检测**：运行时检测宿主环境（HappyCapy / OpenClaw / Claude Code / Codex），无需用户指定
 - **`--platform` 覆盖**：用户或 AI 可显式指定平台，绕过自动检测
+- **智能参数推断**：根据目标平台和项目上下文（已有 BMAD 配置、项目语言偏好等）自动构建 BMAD 官方安装器参数
+- **参数透传与覆盖**：用户可通过 `--modules`、`--tools` 等参数显式覆盖智能推断结果
 - **无持久化配置文件**：安装行为由运行时参数驱动，不依赖 config file 维护状态
 
 ### 运行时环境
@@ -301,7 +350,7 @@ bmad-expert 是一个 npm 包形式的 CLI 工具，专为 AI 平台中介执行
 ### 安装方法
 
 - 主要方式：`npx bmad-expert install`（零全局安装，最低摩擦）
-- 支持平台：HappyCapy（Phase 1 MVP）；OpenClaw、Claude Code（Phase 1.5）
+- 支持平台：HappyCapy（Phase 1 MVP）；OpenClaw、Claude Code、Codex（Phase 2）
 
 ### 脚本化支持
 
@@ -329,7 +378,7 @@ bmad-expert 是一个 npm 包形式的 CLI 工具，专为 AI 平台中介执行
 
 ---
 
-### Phase 1 — MVP（HappyCapy 专注版）
+### Phase 1 -- MVP（HappyCapy 专注版）✅ 已完成
 
 **核心用户旅程覆盖：** Journey 0（发现与第一步）、Journey 1（HappyCapy 主线成功）、Journey 2（AI 自愈）、Journey 3（幂等安装）
 
@@ -340,41 +389,54 @@ bmad-expert 是一个 npm 包形式的 CLI 工具，专为 AI 平台中介执行
 3. 实时进度输出 + 安装后情感性确认引导
 4. 结构化 AI 可读错误 + 分步 fix 说明（权限/沙盒/网络错误场景）
 5. 幂等安装 + 防重复保护 + 环境检测（已有/全新自适应）
-6. **BOOTSTRAP 零追问内容制作**（显式交付物：预填充所有初始化所需信息的 agent 文件）
+6. BOOTSTRAP 零追问内容制作
 7. `--platform` 参数 + `--yes` 非交互模式
 8. HappyCapy 平台独立集成测试
 
-**MVP 不包含：** OpenClaw、Claude Code 支持；update 命令；status 命令；`--json` 输出。
-
 ---
 
-### Phase 1.5 — 平台扩展（Post-MVP 优先项）
-
-**新增覆盖：** Journey 4（晓雯 / OpenClaw 已有项目接入）、Claude Code 基础支持
-
-**交付内容：**
-
-- OpenClaw 平台适配器（感知机制 + 注册契约）
-- Claude Code 平台适配器
-- OpenClaw、Claude Code 各自独立集成测试
-- 跨平台一致性验证
-
----
-
-### Phase 2 — Growth
+### Phase 1.5 -- Growth ✅ 已完成
 
 - `npx bmad-expert update`：安全更新 + 用户状态保护（Journey 5 覆盖）
 - 版本检查机制（启动时提示新版本）
 - `npx bmad-expert status`：安装健康度检查
 - `--json` 输出：AI caller 可编程调用
-- 扩展模块机制：对齐 BMAD `--modules` 模式
 
 ---
 
-### Phase 3 — Vision
+### Phase 2 -- 多平台扩展与安装编排升级
 
-- 多平台自动检测（无需 `--platform` 参数）
-- 完整 BMAD 新手教练流程
+**核心用户旅程覆盖：** Journey 1（更新：智能编排体验）、Journey 4（晓雯 / OpenClaw + 自动检测）、Journey 6（小杰 / Codex 首次安装）
+
+**交付内容（按依赖关系排列）：**
+
+**安装编排重构（基础，先于平台扩展）：**
+
+1. 安装流程重构：从自行文件复制升级为委托 `npx bmad-method install` 执行
+2. 智能参数构建引擎：根据目标平台和项目上下文自动确定 `--modules`、`--tools`、`--communication-language`、`--output-folder` 等参数
+3. 动态版本获取：安装时调用 BMAD 官方安装器最新版本，移除内置固定模板文件
+4. bmad-expert 补充 agent 文件（SOUL.md、IDENTITY.md 等）在 BMAD 官方安装完成后作为补充层写入
+5. 参数透传与覆盖机制：用户可通过 CLI 参数显式覆盖智能推断结果
+
+**多平台扩展（依赖安装重构完成）：**
+
+6. 多平台自动检测机制（无需用户指定 `--platform` 参数）
+7. OpenClaw 平台适配器（感知机制 + 注册契约）-- 优先
+8. Claude Code 平台适配器
+9. Codex（OpenAI）平台适配器
+10. 每平台独立集成测试 + 跨平台一致性验证
+
+**回顾清债（穿插完成）：**
+
+11. README 更新：覆盖 `install`/`update`/`status`/`--json` 全部命令
+12. `status --json` 完整结构化输出实现
+13. FRAMEWORK_FILES 单一数据源或 CI 一致性校验
+
+---
+
+### Phase 3 -- Vision
+
+- 完整的 BMAD 新手教练流程
 - 卸载命令与回滚机制
 - 全局 agent 多项目内存隔离
 
@@ -384,12 +446,15 @@ bmad-expert 是一个 npm 包形式的 CLI 工具，专为 AI 平台中介执行
 
 | 风险 | 严重度 | 缓解策略 |
 |---|---|---|
-| HappyCapy 沙盒权限边界未知 | 高 | MVP 前预研 HappyCapy 沙盒写入权限，确定可用安装路径 |
-| npm 公开注册表名称抢占 | 中 | 提前注册包名 `bmad-expert`，确认可用性 |
-| npx 执行 Node.js 不可用 | 高 | 验证 HappyCapy 执行上下文中 Node.js 版本，制定 fallback 说明 |
-| BOOTSTRAP 内容需要预研 | 中 | 将 BOOTSTRAP 内容制作列为 Phase 1 显式交付物，不假设现成可用 |
+| HappyCapy 沙盒权限边界未知 | 高（已验证） | MVP 已验证 HappyCapy 沙盒写入权限 |
+| npm 公开注册表名称抢占 | 中（已解决） | 包名 `bmad-expert` 已注册 |
+| npx 执行 Node.js 不可用 | 高（已验证） | HappyCapy 环境 Node.js 可用性已确认 |
+| BMAD 官方安装器版本兼容性 | 高 | Phase 2 安装重构需验证 `npx bmad-method install` 各版本参数兼容性，建立版本约束范围 |
+| Codex 平台环境约束未知 | 中 | Phase 2 开发前预研 Codex 执行环境的文件系统权限、Node.js 版本、agent 注册机制 |
+| OpenClaw 平台注册机制未知 | 中 | Phase 2 开发前预研 OpenClaw 的 agent 注册 API 或文件系统约定 |
 | 平台接口更新导致适配失效 | 中 | 每平台独立集成测试 + 监控平台更新公告 |
-| 3 平台并行测试资源不足 | 低（已缓解） | Phase 1 聚焦 HappyCapy，Phase 1.5 再扩展，降低并行压力 |
+| 4 平台并行测试资源不足 | 中 | Phase 2 按优先级串行开发（OpenClaw → Claude Code → Codex），降低并行压力 |
+| 智能参数推断与用户预期不符 | 低 | 提供参数透传覆盖机制，用户可显式指定任何参数 |
 
 ## Functional Requirements
 
@@ -403,7 +468,7 @@ bmad-expert 是一个 npm 包形式的 CLI 工具，专为 AI 平台中介执行
 
 ### 平台感知与注册
 
-- FR6: 系统可自动识别当前宿主平台（HappyCapy / OpenClaw / Claude Code）
+- FR6: 系统可自动识别当前宿主平台（HappyCapy / OpenClaw / Claude Code / Codex）
 - FR7: 用户（AI）可通过 `--platform` 参数显式指定目标平台覆盖自动检测
 - FR8: 系统可感知目标平台的文件写入权限边界并选择有效安装路径
 - FR9: 系统可识别目标平台的 agent 注册机制并完成对应注册契约
@@ -457,6 +522,25 @@ bmad-expert 是一个 npm 包形式的 CLI 工具，专为 AI 平台中介执行
 - FR39: 系统提供 `status` 命令检查当前安装健康度
 - FR40: 系统支持 `--json` 参数以结构化 JSON 格式输出执行结果供 AI 调用方解析
 
+### 安装编排与智能参数构建（Phase 2）
+
+- FR41: 系统通过调用 `npx bmad-method install` 委托 BMAD 官方安装器执行核心安装流程，而非自行复制模板文件
+- FR42: 系统根据目标平台自动确定 `--tools` 参数值（如 HappyCapy 不传 tools，Claude Code 传 `claude-code`）
+- FR43: 系统根据项目上下文（已有 BMAD 配置文件、用户语言偏好、项目目录结构）智能构建 `--modules`、`--communication-language`、`--document-output-language`、`--output-folder` 参数
+- FR44: 系统在安装时动态获取 BMAD 官方安装器最新版本执行，不内置固定版本的 BMAD 模板文件
+- FR45: bmad-expert 自身的 agent 补充文件（SOUL.md、IDENTITY.md、AGENTS.md、BOOTSTRAP.md）在 BMAD 官方安装完成后作为补充层写入目标目录
+- FR46: 用户可通过 `--modules`、`--tools`、`--communication-language`、`--output-folder` 参数显式覆盖系统的智能推断结果
+
+### 多平台自动检测（Phase 2）
+
+- FR47: 系统在无 `--platform` 参数时通过环境变量、文件系统特征等信号自动检测当前宿主平台，检测失败时提示用户手动指定
+- FR48: 系统支持 Codex（OpenAI）平台的环境检测、agent 文件写入路径确定与平台注册契约完成
+
+### 回顾清债（Phase 2）
+
+- FR49: `status --json` 输出完整的结构化安装状态数据，包含健康度（healthy/not_installed/corrupted）、逐文件完整性检查结果、当前安装版本信息
+- FR50: README 覆盖 `install`、`update`、`status`、`--json` 全部命令的使用说明，`--json` 模式以 AI 调用场景为主要说明角度
+
 ## Non-Functional Requirements
 
 ### 性能
@@ -468,7 +552,7 @@ bmad-expert 是一个 npm 包形式的 CLI 工具，专为 AI 平台中介执行
 ### 兼容性
 
 - NFR4: 支持 Node.js 18+ 作为推荐版本；尽量兼容 Node.js 16+，具体下限在实现阶段测试确认
-- NFR5: 在 HappyCapy、OpenClaw、Claude Code 三个平台的 Node.js 执行环境下，安装可成功完成（agent 文件写入 + 注册契约完成 + exit code 0），无运行时报错
+- NFR5: 在 HappyCapy、OpenClaw、Claude Code、Codex 四个平台的 Node.js 执行环境下，安装可成功完成（agent 文件写入 + 注册契约完成 + exit code 0），无运行时报错
 - NFR6: 包通过 npm 公开注册表分发，无需用户配置额外认证 token 即可执行 npx
 - NFR7: 安装产生的文件操作在所有支持平台上成功执行，不因路径格式差异产生文件写入错误
 
@@ -483,3 +567,8 @@ bmad-expert 是一个 npm 包形式的 CLI 工具，专为 AI 平台中介执行
 
 - NFR12: 写入目标平台文件系统时，仅写入预定义的合法路径范围，不越界写入系统级目录
 - NFR13: 发布包所有直接依赖和间接依赖版本固定，无浮动版本范围（如 `^`、`~`），供应链依赖可通过锁定文件完整还原
+
+### 安装编排性能（Phase 2）
+
+- NFR14: 安装编排调用 `npx bmad-method install` 的完整流程（含参数构建 + 官方安装器执行 + bmad-expert 补充文件写入）在 60 秒内完成（正常网络环境），不因委托调用引入显著延迟
+- NFR15: 多平台自动检测在 1 秒内完成，不阻塞安装主流程；检测结果在安装进度中明确展示
