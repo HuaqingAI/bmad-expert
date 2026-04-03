@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-03-23T00:00:00Z
-last_updated: 2026-04-02T00:00:00Z
+last_updated: 2026-04-02T06:00:00Z
 project: bmad-expert
 project_key: NOKEY
 tracking_system: file-system
@@ -87,7 +87,7 @@ development_status:
 
   # Epic 7：安装编排重构 — 智能编排前端取代模板复制（Phase 2）
   epic-7: in-progress
-  7-1-param-builder: backlog
+  7-1-param-builder: done
   7-2-orchestrator: done
   7-3-installer-two-phase-refactor: backlog
   epic-7-retrospective: optional
