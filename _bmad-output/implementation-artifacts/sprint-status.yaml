@@ -86,9 +86,9 @@ development_status:
   epic-6-retrospective: done
 
   # Epic 7：安装编排重构 — 智能编排前端取代模板复制（Phase 2）
-  epic-7: backlog
+  epic-7: in-progress
   7-1-param-builder: backlog
-  7-2-orchestrator: backlog
+  7-2-orchestrator: in-progress
   7-3-installer-two-phase-refactor: backlog
   epic-7-retrospective: optional
 
