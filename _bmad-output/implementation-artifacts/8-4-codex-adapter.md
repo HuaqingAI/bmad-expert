@@ -1,6 +1,6 @@
 # Story 8.4: Codex 平台适配器
 
-Status: ready-for-dev
+Status: review
 
 ## Story
 

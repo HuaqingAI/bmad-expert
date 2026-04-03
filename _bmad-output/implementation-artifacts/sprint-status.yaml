@@ -97,7 +97,7 @@ development_status:
   8-1-multi-platform-detection: done
   8-2-openclaw-adapter: backlog
   8-3-claude-code-adapter: backlog
-  8-4-codex-adapter: in-progress
+  8-4-codex-adapter: review
   8-5-cross-platform-validation: backlog
   epic-8-retrospective: optional
 
