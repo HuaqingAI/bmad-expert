@@ -21,6 +21,7 @@ vi.mock('execa', () => ({
 vi.mock('fs-extra', () => ({
   default: {
     pathExists: vi.fn(),
+    ensureDir: vi.fn().mockResolvedValue(undefined),
   },
 }))
 
@@ -697,6 +698,85 @@ describe('lib/adapters/codex.js（探针）', () => {
       const { detect: d } = await import('../lib/adapters/codex.js')
       const result = await d()
       expect(result).toBe(false)
+    })
+  })
+
+  describe('getInstallPath()', () => {
+    it('合法 agentId 返回含 .codex 和 bmad-expert 的绝对路径', async () => {
+      const { getInstallPath } = await import('../lib/adapters/codex.js')
+      const result = getInstallPath('bmad-expert')
+      expect(result).toContain('.codex')
+      expect(result).toContain('bmad-expert')
+      expect(path.isAbsolute(result)).toBe(true)
+    })
+
+    it('空串 agentId 抛出 BmadError(E004)', async () => {
+      const { getInstallPath } = await import('../lib/adapters/codex.js')
+      expect(() => getInstallPath('')).toThrow(
+        expect.objectContaining({ bmadCode: 'E004' })
+      )
+    })
+
+    it('".." agentId 抛出 BmadError(E004)', async () => {
+      const { getInstallPath } = await import('../lib/adapters/codex.js')
+      expect(() => getInstallPath('..')).toThrow(
+        expect.objectContaining({ bmadCode: 'E004' })
+      )
+    })
+
+    it('含路径分隔符的 agentId 抛出 BmadError(E004)', async () => {
+      const { getInstallPath } = await import('../lib/adapters/codex.js')
+      expect(() => getInstallPath('a/b')).toThrow(
+        expect.objectContaining({ bmadCode: 'E004' })
+      )
+    })
+  })
+
+  describe('check()', () => {
+    it('路径不存在时返回 not_installed', async () => {
+      const fs = (await import('fs-extra')).default
+      fs.pathExists.mockResolvedValue(false)
+      const { check } = await import('../lib/adapters/codex.js')
+      const result = await check('bmad-expert')
+      expect(result).toBe('not_installed')
+    })
+
+    it('路径存在且含 AGENTS.md 时返回 installed', async () => {
+      const fs = (await import('fs-extra')).default
+      fs.pathExists.mockResolvedValue(true)
+      const { check } = await import('../lib/adapters/codex.js')
+      const result = await check('bmad-expert')
+      expect(result).toBe('installed')
+    })
+
+    it('路径存在但缺少 AGENTS.md 时返回 corrupted', async () => {
+      const fs = (await import('fs-extra')).default
+      fs.pathExists
+        .mockResolvedValueOnce(true)   // installPath 存在
+        .mockResolvedValueOnce(false)  // AGENTS.md 不存在
+      const { check } = await import('../lib/adapters/codex.js')
+      const result = await check('bmad-expert')
+      expect(result).toBe('corrupted')
+    })
+  })
+
+  describe('install()', () => {
+    it('正常执行不 throw，ensureDir 被调用', async () => {
+      const fs = (await import('fs-extra')).default
+      const { install: adapterInstall } = await import('../lib/adapters/codex.js')
+      await expect(
+        adapterInstall(null, { agentId: 'bmad-expert' })
+      ).resolves.toBeUndefined()
+      expect(fs.ensureDir).toHaveBeenCalled()
+    })
+
+    it('ensureDir 失败时不 throw（降级路径）', async () => {
+      const fs = (await import('fs-extra')).default
+      fs.ensureDir.mockRejectedValueOnce(new Error('EACCES: permission denied'))
+      const { install: adapterInstall } = await import('../lib/adapters/codex.js')
+      await expect(
+        adapterInstall(null, { agentId: 'bmad-expert' })
+      ).resolves.toBeUndefined()
     })
   })
 })
