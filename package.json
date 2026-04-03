@@ -37,14 +37,24 @@
   "devDependencies": {
     "eslint": "9.24.0",
     "prettier": "3.5.3",
-    "vitest": "4.1.1"
+    "vitest": "^4.1.1"
   },
   "publishConfig": {
     "registry": "https://registry.npmjs.org/",
     "access": "public"
   },
   "bmadExpert": {
-    "frameworkFiles": ["SOUL.md", "IDENTITY.md", "AGENTS.md", "BOOTSTRAP.md", "bmad-project-init.md"],
-    "userDataPaths": ["MEMORY.md", "USER.md", "memory/"]
+    "frameworkFiles": [
+      "SOUL.md",
+      "IDENTITY.md",
+      "AGENTS.md",
+      "BOOTSTRAP.md",
+      "bmad-project-init.md"
+    ],
+    "userDataPaths": [
+      "MEMORY.md",
+      "USER.md",
+      "memory/"
+    ]
   }
 }
