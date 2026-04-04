@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-03-23T00:00:00Z
-last_updated: 2026-04-02T06:00:00Z
+last_updated: 2026-04-04T00:00:00Z
 project: bmad-expert
 project_key: NOKEY
 tracking_system: file-system
@@ -86,10 +86,10 @@ development_status:
   epic-6-retrospective: done
 
   # Epic 7：安装编排重构 — 智能编排前端取代模板复制（Phase 2）
-  epic-7: in-progress
+  epic-7: done
   7-1-param-builder: done
   7-2-orchestrator: done
-  7-3-installer-two-phase-refactor: backlog
+  7-3-installer-two-phase-refactor: done
   epic-7-retrospective: optional
 
   # Epic 8：多平台扩展 — OpenClaw、Claude Code、Codex 全支持（Phase 2）
