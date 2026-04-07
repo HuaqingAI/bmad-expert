@@ -85,6 +85,43 @@ describe('OpenClaw 完整安装流程（集成测试）', () => {
     expect(msg).toContain('安装完成（用时')
   })
 
+  it('正常安装：buildParams 以 platformName=openclaw 调用（AC2 跨平台验证）', async () => {
+    await install({ platform: null, agentId: 'bmad-expert', yes: false })
+
+    const { buildParams } = await import('../../lib/param-builder.js')
+    expect(buildParams).toHaveBeenCalledTimes(1)
+    const [platformArg, contextArg] = buildParams.mock.calls[0]
+    expect(platformArg).toBe('openclaw')
+    expect(contextArg).toHaveProperty('projectRoot')
+    expect(contextArg).toHaveProperty('userOverrides')
+  })
+
+  it('正常安装：install() 返回结构化数据（platform / agentId / installPath / duration）', async () => {
+    const result = await install({ platform: null, agentId: 'bmad-expert', yes: false })
+
+    expect(result).toHaveProperty('platform', 'openclaw')
+    expect(result).toHaveProperty('agentId', 'bmad-expert')
+    expect(result).toHaveProperty('installPath')
+    expect(result).toHaveProperty('duration')
+    expect(typeof result.duration).toBe('number')
+  })
+
+  it('错误场景：writeSupplementFiles EACCES 时抛出 BmadError(E004)', async () => {
+    const { writeSupplementFiles } = await import('../../lib/orchestrator.js')
+    const { BmadError } = await import('../../lib/errors.js')
+    const permissionError = Object.assign(
+      new Error('EACCES: permission denied, mkdir'),
+      { code: 'EACCES' }
+    )
+    writeSupplementFiles.mockRejectedValueOnce(
+      new BmadError('E004', '补充文件写入失败', permissionError)
+    )
+
+    await expect(
+      install({ platform: null, agentId: 'bmad-expert', yes: false })
+    ).rejects.toMatchObject({ bmadCode: 'E004' })
+  })
+
   // ── 幂等安装 ──────────────────────────────────────────────────────────────
   it('幂等安装：已安装时 throw BmadError(E006)，不写入任何文件', async () => {
     const fsExtra = (await import('fs-extra')).default
