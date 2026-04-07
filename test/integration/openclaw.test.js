@@ -4,7 +4,6 @@ import { install } from '../../lib/installer.js'
 import * as openclawAdapter from '../../lib/adapters/openclaw.js'
 
 // ── 模块 Mock ──────────────────────────────────────────────────────────────
-// 注意：OpenClaw 适配器不依赖 execa（无外部 CLI 调用），仅需 fs-extra mock
 vi.mock('fs-extra', () => ({
   default: {
     pathExists: vi.fn(),
@@ -21,6 +20,19 @@ vi.mock('../../lib/output.js', () => ({
   printProgress: vi.fn(),
   printSuccess: vi.fn(),
   printError: vi.fn(),
+}))
+
+// Phase 2：mock orchestrator（不真实执行 npx bmad-method install）
+vi.mock('../../lib/orchestrator.js', () => ({
+  executeInstall: vi.fn().mockResolvedValue({ stdout: '', stderr: '' }),
+  writeSupplementFiles: vi.fn().mockResolvedValue(undefined),
+}))
+
+// Phase 2：mock param-builder（返回含 toArgs() 的 mock 对象）
+vi.mock('../../lib/param-builder.js', () => ({
+  buildParams: vi.fn().mockReturnValue({
+    toArgs: vi.fn().mockReturnValue(['--modules', 'bmm', '--yes']),
+  }),
 }))
 
 // ── 测试套件 ───────────────────────────────────────────────────────────────
@@ -47,20 +59,19 @@ describe('OpenClaw 完整安装流程（集成测试）', () => {
   })
 
   // ── 正常安装 ──────────────────────────────────────────────────────────────
-  it('正常安装：写入 5 个框架文件并写入 agents-registry.json', async () => {
+  it('正常安装：executeInstall、writeSupplementFiles 和 registry 写入被调用', async () => {
     await install({ platform: null, agentId: 'bmad-expert', yes: false })
 
+    // Phase 2 编排路径验证
+    const { executeInstall, writeSupplementFiles } = await import('../../lib/orchestrator.js')
+    expect(executeInstall).toHaveBeenCalledTimes(1)
+    expect(writeSupplementFiles).toHaveBeenCalledTimes(1)
+
+    // OpenClaw 平台注册：registry 被写入（outputJson）
     const fsExtra = (await import('fs-extra')).default
-
-    // 5 个框架文件全部写入（outputFile）
-    expect(fsExtra.outputFile).toHaveBeenCalledTimes(5)
-
-    // registry 被写入（outputJson）
     expect(fsExtra.outputJson).toHaveBeenCalledTimes(1)
     const registryCall = fsExtra.outputJson.mock.calls[0]
-    // 路径含 .openclaw/agents-registry.json
     expect(registryCall[0]).toContain('agents-registry.json')
-    // registry 内容包含 agentId
     expect(registryCall[1]).toMatchObject({ 'bmad-expert': expect.objectContaining({ installedAt: expect.any(String) }) })
   })
 
@@ -84,8 +95,10 @@ describe('OpenClaw 完整安装流程（集成测试）', () => {
       install({ platform: null, agentId: 'bmad-expert', yes: false })
     ).rejects.toMatchObject({ bmadCode: 'E006' })
 
-    // 不写入任何文件
-    expect(fsExtra.outputFile).not.toHaveBeenCalled()
+    // Phase 2：幂等时 executeInstall / writeSupplementFiles / registry 写入均不执行
+    const { executeInstall, writeSupplementFiles } = await import('../../lib/orchestrator.js')
+    expect(executeInstall).not.toHaveBeenCalled()
+    expect(writeSupplementFiles).not.toHaveBeenCalled()
     expect(fsExtra.outputJson).not.toHaveBeenCalled()
   })
 
