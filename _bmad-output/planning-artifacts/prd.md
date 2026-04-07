@@ -19,8 +19,10 @@ briefCount: 0
 researchCount: 5
 brainstormingCount: 1
 projectDocsCount: 0
-lastEdited: '2026-04-02'
+lastEdited: '2026-04-07'
 editHistory:
+  - date: '2026-04-07'
+    changes: 'Sprint Change: Claude Code / Codex 适配器延期（架构不兼容），Phase 2 范围缩减为 OpenClaw 平台扩展。FR47 范围收窄，FR48 标为延期，NFR5 调整为 2 平台。Phase 2 路线图移除 Claude Code / Codex 适配器，添加延期记录。'
   - date: '2026-04-02'
     changes: 'Phase 2 扩展：安装编排重构（委托 bmad-method install）、多平台扩展（OpenClaw/Claude Code/Codex）、自动检测、智能参数构建。新增 FR41-FR50、NFR14-15、Journey 6、Innovation 第5项。路线图重构：Phase 1/1.5 标为已完成，新 Phase 2 合并原 Phase 1.5 + 安装重构 + 自动检测。'
 ---
@@ -88,7 +90,7 @@ bmad-expert 是一个以 npm 包形式分发的 BMAD 智能安装编排器。它
 | 安装成功率 | ≥ 99% |
 | 首次工作流启动步骤 | 1 句话 |
 | 支持平台数（Phase 1 MVP） | 1（HappyCapy） |
-| 支持平台数（Phase 2） | +3（OpenClaw、Claude Code、Codex） |
+| 支持平台数（Phase 2） | +1（OpenClaw）；Claude Code / Codex 延期 |
 | 7 天工作流完成率 | ≥ 70% |
 | 内部团队月度使用率 | ≥ 75%（6/8 人） |
 
@@ -421,10 +423,14 @@ bmad-expert 是一个 npm 包形式的 CLI 工具，专为 AI 平台中介执行
 **多平台扩展（依赖安装重构完成）：**
 
 6. 多平台自动检测机制（无需用户指定 `--platform` 参数）
-7. OpenClaw 平台适配器（感知机制 + 注册契约）-- 优先
-8. Claude Code 平台适配器
-9. Codex（OpenAI）平台适配器
-10. 每平台独立集成测试 + 跨平台一致性验证
+7. OpenClaw 平台适配器（感知机制 + 注册契约）
+8. 每平台独立集成测试 + 跨平台一致性验证（HappyCapy + OpenClaw）
+
+**【延期至未来 Phase】Claude Code 和 Codex 平台适配器：**
+- 原因：两平台不原生支持 agent 文件写入 + 注册契约架构
+- Claude Code 通常需通过 skills + 项目配置文件（CLAUDE.md/AGENTS.md）实现
+- Codex 通常需通过 plugins 机制实现
+- 最优实现方案待确定后重新设计并纳入规划
 
 **回顾清债（穿插完成）：**
 
@@ -450,10 +456,10 @@ bmad-expert 是一个 npm 包形式的 CLI 工具，专为 AI 平台中介执行
 | npm 公开注册表名称抢占 | 中（已解决） | 包名 `bmad-expert` 已注册 |
 | npx 执行 Node.js 不可用 | 高（已验证） | HappyCapy 环境 Node.js 可用性已确认 |
 | BMAD 官方安装器版本兼容性 | 高 | Phase 2 安装重构需验证 `npx bmad-method install` 各版本参数兼容性，建立版本约束范围 |
-| Codex 平台环境约束未知 | 中 | Phase 2 开发前预研 Codex 执行环境的文件系统权限、Node.js 版本、agent 注册机制 |
+| Codex 平台环境约束未知 | 中 | 【延期】Phase 2 取消 Codex 适配器，待未来 Phase 重新设计 |
 | OpenClaw 平台注册机制未知 | 中 | Phase 2 开发前预研 OpenClaw 的 agent 注册 API 或文件系统约定 |
 | 平台接口更新导致适配失效 | 中 | 每平台独立集成测试 + 监控平台更新公告 |
-| 4 平台并行测试资源不足 | 中 | Phase 2 按优先级串行开发（OpenClaw → Claude Code → Codex），降低并行压力 |
+| Claude Code / Codex 架构不兼容 | 中 | 【已确认】两平台不支持 agent 注册架构，Phase 2 取消适配器，延期至重新设计 |
 | 智能参数推断与用户预期不符 | 低 | 提供参数透传覆盖机制，用户可显式指定任何参数 |
 
 ## Functional Requirements
@@ -533,8 +539,8 @@ bmad-expert 是一个 npm 包形式的 CLI 工具，专为 AI 平台中介执行
 
 ### 多平台自动检测（Phase 2）
 
-- FR47: 系统在无 `--platform` 参数时通过环境变量、文件系统特征等信号自动检测当前宿主平台，检测失败时提示用户手动指定
-- FR48: 系统支持 Codex（OpenAI）平台的环境检测、agent 文件写入路径确定与平台注册契约完成
+- FR47: 系统在无 `--platform` 参数时通过环境变量、文件系统特征等信号自动检测当前宿主平台（Phase 2 范围：HappyCapy + OpenClaw），检测失败时提示用户手动指定
+- FR48: 【延期】系统支持 Codex（OpenAI）平台的环境检测、agent 文件写入路径确定与平台注册契约完成（Claude Code / Codex 不支持当前适配器架构，待重新设计后纳入）
 
 ### 回顾清债（Phase 2）
 
@@ -552,7 +558,7 @@ bmad-expert 是一个 npm 包形式的 CLI 工具，专为 AI 平台中介执行
 ### 兼容性
 
 - NFR4: 支持 Node.js 18+ 作为推荐版本；尽量兼容 Node.js 16+，具体下限在实现阶段测试确认
-- NFR5: 在 HappyCapy、OpenClaw、Claude Code、Codex 四个平台的 Node.js 执行环境下，安装可成功完成（agent 文件写入 + 注册契约完成 + exit code 0），无运行时报错
+- NFR5: 在 HappyCapy、OpenClaw 两个平台的 Node.js 执行环境下，安装可成功完成（agent 文件写入 + 注册契约完成 + exit code 0），无运行时报错（Claude Code / Codex 延期至适配器架构重新设计后）
 - NFR6: 包通过 npm 公开注册表分发，无需用户配置额外认证 token 即可执行 npx
 - NFR7: 安装产生的文件操作在所有支持平台上成功执行，不因路径格式差异产生文件写入错误
 
