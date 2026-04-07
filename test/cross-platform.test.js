@@ -8,6 +8,8 @@ vi.mock('fs-extra', () => ({
     ensureDir: vi.fn().mockResolvedValue(undefined),
     readFile: vi.fn().mockResolvedValue('content'),
     outputFile: vi.fn().mockResolvedValue(undefined),
+    readJson: vi.fn().mockResolvedValue({}),
+    outputJson: vi.fn().mockResolvedValue(undefined),
   },
 }))
 

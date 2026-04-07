@@ -93,10 +93,11 @@ development_status:
   epic-7-retrospective: optional
 
   # Epic 8：多平台扩展 — OpenClaw 平台扩展（Phase 2）
-  # Sprint Change 2026-04-07: 8-3 (Claude Code) 和 8-4 (Codex) 已取消（架构不兼容，延期至未来 Phase）
   epic-8: in-progress
-  8-1-multi-platform-detection: review
+  8-1-multi-platform-detection: done
   8-2-openclaw-adapter: done
+  8-3-claude-code-adapter: backlog
+  8-4-codex-adapter: backlog
   8-5-cross-platform-validation: done
   epic-8-retrospective: optional
 
