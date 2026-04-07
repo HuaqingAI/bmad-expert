@@ -89,7 +89,7 @@ development_status:
   epic-7: done
   7-1-param-builder: done
   7-2-orchestrator: done
-  7-3-installer-two-phase-refactor: done
+  7-3-installer-two-phase-refactor: review
   epic-7-retrospective: optional
 
   # Epic 8：多平台扩展 — OpenClaw、Claude Code、Codex 全支持（Phase 2）
