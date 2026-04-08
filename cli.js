@@ -10,6 +10,7 @@ import { install } from './lib/installer.js'
 import { update } from './lib/updater.js'
 import { checkStatus } from './lib/checker.js'
 import { init } from './lib/initializer.js'
+import { uninstall } from './lib/uninstaller.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const pkg = JSON.parse(readFileSync(join(__dirname, 'package.json'), 'utf8'))
@@ -109,6 +110,27 @@ program
     }
   })
 
+program
+  .command('uninstall')
+  .description('卸载 BMAD：清理 init 生成的配置文件和 install 安装的 _bmad 目录（Phase 3）')
+  .option('--platform <name>', '指定目标平台（happycapy/openclaw/claude-code/codex）')
+  .option('--agent-id <id>', 'Agent 标识符', 'bmad-expert')
+  .option('--yes', '跳过确认直接执行清理')
+  .option('--backup', '卸载前备份所有文件至 .bmad-backup-{timestamp}/')
+  .option('--json', '输出结构化 JSON 结果（AI 调用专用）')
+  .action(async (options) => {
+    if (options.json) setJsonMode(true)
+    const result = await uninstall({
+      platform: options.platform ?? null,
+      agentId: options.agentId,
+      yes: options.yes ?? false,
+      backup: options.backup ?? false,
+    })
+    if (options.json) {
+      printJSON({ success: true, ...result })
+    }
+  })
+
 const CODE_TO_EXIT = {
   E001: EXIT_CODES.GENERAL_ERROR,
   E002: EXIT_CODES.INVALID_ARGS,
@@ -116,6 +138,7 @@ const CODE_TO_EXIT = {
   E004: EXIT_CODES.PERMISSION_DENIED,
   E005: EXIT_CODES.NETWORK_ERROR,
   E006: EXIT_CODES.ALREADY_INSTALLED,
+  E007: EXIT_CODES.NOT_INSTALLED,
 }
 
 // Node.js 版本检查（E003）— 必须在 parseAsync 之前执行
