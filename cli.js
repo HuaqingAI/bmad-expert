@@ -83,7 +83,15 @@ program
       agentId: options.agentId,
     })
     if (options.json) {
-      printJSON({ success: true, ...result })
+      // result 已含 success/status/version/platform/installPath/files 字段（Story 9.1 FR49）
+      printJSON(result)
+      if (!result.success) {
+        process.exit(EXIT_CODES.GENERAL_ERROR)
+      }
+    } else if (!result.success) {
+      // 非 JSON 模式：text 报告已由 checkStatus 通过 printSuccess 输出至 stdout
+      // 直接以非零 exit code 退出（原来靠 throw BmadError → global catch 触发）
+      process.exit(EXIT_CODES.GENERAL_ERROR)
     }
   })
 
