@@ -1,6 +1,6 @@
 # Story 10.1：规范化模板文件设计（templates/）
 
-Status: review
+Status: done
 
 ---
 
