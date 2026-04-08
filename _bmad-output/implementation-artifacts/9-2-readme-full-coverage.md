@@ -1,6 +1,6 @@
 # Story 9.2：README 全命令覆盖与多平台文档更新
 
-Status: review
+Status: done
 
 ## Story
 
