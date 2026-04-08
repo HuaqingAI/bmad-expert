@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-03-23T00:00:00Z
-last_updated: 2026-04-08T01:20:00Z
+last_updated: 2026-04-08T12:00:00Z
 project: bmad-expert
 project_key: NOKEY
 tracking_system: file-system
@@ -104,5 +104,5 @@ development_status:
   # Epic 9：回顾清债 — 完整状态输出与文档全覆盖（Phase 2）
   epic-9: in-progress
   9-1-status-json-output: done
-  9-2-readme-full-coverage: backlog
+  9-2-readme-full-coverage: done
   epic-9-retrospective: optional
