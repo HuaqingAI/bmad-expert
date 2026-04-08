@@ -9,6 +9,7 @@ import { printError, printJSON, setJsonMode, getJsonMode } from './lib/output.js
 import { install } from './lib/installer.js'
 import { update } from './lib/updater.js'
 import { checkStatus } from './lib/checker.js'
+import { init } from './lib/initializer.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const pkg = JSON.parse(readFileSync(join(__dirname, 'package.json'), 'utf8'))
@@ -92,6 +93,19 @@ program
       // 非 JSON 模式：text 报告已由 checkStatus 通过 printSuccess 输出至 stdout
       // 直接以非零 exit code 退出（原来靠 throw BmadError → global catch 触发）
       process.exit(EXIT_CODES.GENERAL_ERROR)
+    }
+  })
+
+program
+  .command('init')
+  .description('初始化工作环境：生成 CLAUDE.md 和 workflow 配置文件（Phase 3）')
+  .option('--yes', '非交互模式，使用默认值')
+  .option('--json', '输出结构化 JSON 结果（AI 调用专用）')
+  .action(async (options) => {
+    if (options.json) setJsonMode(true)
+    const result = await init({ yes: options.yes ?? false })
+    if (options.json) {
+      printJSON({ success: true, ...result })
     }
   })
 
