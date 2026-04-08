@@ -109,7 +109,7 @@ development_status:
   # Epic 10：模板体系与 init 命令 — 工作环境初始化（Phase 3）
   epic-10: in-progress
   10-1-template-design: done
-  10-2-init-command-core: ready-for-dev
+  10-2-init-command-core: done
   10-3-init-idempotent-conflict: backlog
   epic-10-retrospective: optional
 
