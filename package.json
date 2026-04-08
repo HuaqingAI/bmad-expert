@@ -25,6 +25,7 @@
     "cli.js",
     "lib/",
     "agent/",
+    "templates/",
     "README.md"
   ],
   "license": "MIT",

@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-03-23T00:00:00Z
-last_updated: 2026-04-08T18:00:00Z
+last_updated: 2026-04-08T20:00:00Z
 project: bmad-expert
 project_key: NOKEY
 tracking_system: file-system
@@ -105,3 +105,16 @@ development_status:
   9-1-status-json-output: done
   9-2-readme-full-coverage: done
   epic-9-retrospective: optional
+
+  # Epic 10：模板体系与 init 命令 — 工作环境初始化（Phase 3）
+  epic-10: in-progress
+  10-1-template-design: done
+  10-2-init-command-core: backlog
+  10-3-init-idempotent-conflict: backlog
+  epic-10-retrospective: optional
+
+  # Epic 11：配置文件更新与卸载命令（Phase 3）
+  epic-11: backlog
+  11-1-update-init-config: backlog
+  11-2-uninstall-command: backlog
+  epic-11-retrospective: optional
