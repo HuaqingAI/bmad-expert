@@ -103,6 +103,6 @@ development_status:
 
   # Epic 9：回顾清债 — 完整状态输出与文档全覆盖（Phase 2）
   epic-9: in-progress
-  9-1-status-json-output: backlog
+  9-1-status-json-output: done
   9-2-readme-full-coverage: done
   epic-9-retrospective: optional

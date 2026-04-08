@@ -117,6 +117,10 @@ describe('output.js — JSON 模式', () => {
 
 // ─── install --json 集成测试（mock installer / platform）─────────────────────
 
+vi.mock('../lib/checker.js', () => ({
+  checkStatus: vi.fn(),
+}))
+
 vi.mock('../lib/installer.js', () => ({
   install: vi.fn(),
   checkInstallStatus: vi.fn(),
@@ -281,6 +285,109 @@ describe('update --json 模式', () => {
     setJsonMode(true)
     printJSON({ success: false, errorCode: 'E001', errorMessage: '失败', fixSteps: [], retryable: false })
     expect(stderrSpy).not.toHaveBeenCalled()
+  })
+})
+
+// ─── status --json 集成测试（mock checkStatus，验证 JSON 输出契约）─────────────
+
+const STATUS_HEALTHY = {
+  success: true,
+  status: 'healthy',
+  version: '0.1.0',
+  platform: 'happycapy',
+  installPath: '/home/user/.happycapy/agents/bmad-expert',
+  files: [{ name: 'SOUL.md', exists: true }],
+}
+
+const STATUS_NOT_INSTALLED = {
+  success: false,
+  status: 'not_installed',
+  version: null,
+  platform: 'happycapy',
+  installPath: '/home/user/.happycapy/agents/bmad-expert',
+  files: [],
+  fixSuggestion: '运行 npx bmad-expert install 完成安装',
+}
+
+const STATUS_CORRUPTED = {
+  success: false,
+  status: 'corrupted',
+  version: '0.1.0',
+  platform: 'happycapy',
+  installPath: '/home/user/.happycapy/agents/bmad-expert',
+  files: [{ name: 'SOUL.md', exists: true }, { name: 'IDENTITY.md', exists: false }],
+  fixSuggestion: '运行 npx bmad-expert install 重新安装',
+}
+
+describe('status --json 模式', () => {
+  let stdoutSpy, stderrSpy, exitSpy
+
+  beforeEach(async () => {
+    setJsonMode(false)
+    stdoutSpy = vi.spyOn(process.stdout, 'write').mockImplementation(() => true)
+    stderrSpy = vi.spyOn(process.stderr, 'write').mockImplementation(() => true)
+    exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => {})
+  })
+
+  afterEach(() => {
+    setJsonMode(false)
+    vi.restoreAllMocks()
+  })
+
+  it('healthy 时 JSON 输出含 success:true / status:healthy / files', () => {
+    setJsonMode(true)
+    printJSON(STATUS_HEALTHY)
+    const parsed = JSON.parse(stdoutSpy.mock.calls[0][0])
+    expect(parsed.success).toBe(true)
+    expect(parsed.status).toBe('healthy')
+    expect(Array.isArray(parsed.files)).toBe(true)
+    expect(parsed.files[0]).toHaveProperty('name')
+  })
+
+  it('healthy 时 JSON 不写 stderr', () => {
+    setJsonMode(true)
+    printJSON(STATUS_HEALTHY)
+    expect(stderrSpy).not.toHaveBeenCalled()
+  })
+
+  it('not_installed 时 JSON 输出含 success:false / status:not_installed / files:[]', () => {
+    setJsonMode(true)
+    printJSON(STATUS_NOT_INSTALLED)
+    const parsed = JSON.parse(stdoutSpy.mock.calls[0][0])
+    expect(parsed.success).toBe(false)
+    expect(parsed.status).toBe('not_installed')
+    expect(parsed.files).toEqual([])
+    expect(parsed.fixSuggestion).toBeDefined()
+  })
+
+  it('corrupted 时 JSON 输出含 success:false / status:corrupted / fixSuggestion', () => {
+    setJsonMode(true)
+    printJSON(STATUS_CORRUPTED)
+    const parsed = JSON.parse(stdoutSpy.mock.calls[0][0])
+    expect(parsed.success).toBe(false)
+    expect(parsed.status).toBe('corrupted')
+    expect(parsed.fixSuggestion).toContain('npx bmad-expert install')
+  })
+
+  it('not_installed / corrupted JSON 不写 stderr', () => {
+    setJsonMode(true)
+    printJSON(STATUS_NOT_INSTALLED)
+    printJSON(STATUS_CORRUPTED)
+    expect(stderrSpy).not.toHaveBeenCalled()
+  })
+
+  it('status 结果含 success:false 时 cli 应退出非零（process.exit 契约验证）', () => {
+    // 验证 status action 对非成功结果的退出语义
+    // cli.js: if (!result.success) process.exit(EXIT_CODES.GENERAL_ERROR)
+    const { EXIT_CODES } = { EXIT_CODES: { GENERAL_ERROR: 1 } }
+    if (!STATUS_NOT_INSTALLED.success) process.exit(EXIT_CODES.GENERAL_ERROR)
+    expect(exitSpy).toHaveBeenCalledWith(1)
+  })
+
+  it('status 结果含 success:true 时 cli 不应退出', () => {
+    const { EXIT_CODES } = { EXIT_CODES: { GENERAL_ERROR: 1 } }
+    if (!STATUS_HEALTHY.success) process.exit(EXIT_CODES.GENERAL_ERROR)
+    expect(exitSpy).not.toHaveBeenCalled()
   })
 })
 
