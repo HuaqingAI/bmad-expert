@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-03-23T00:00:00Z
-last_updated: 2026-04-08T12:00:00Z
+last_updated: 2026-04-08T18:00:00Z
 project: bmad-expert
 project_key: NOKEY
 tracking_system: file-system
@@ -89,20 +89,19 @@ development_status:
   epic-7: done
   7-1-param-builder: done
   7-2-orchestrator: done
-  7-3-installer-two-phase-refactor: review
+  7-3-installer-two-phase-refactor: done
   epic-7-retrospective: optional
 
   # Epic 8：多平台扩展 — OpenClaw 平台扩展（Phase 2）
-  epic-8: in-progress
+  # 注：Story 8-3（Claude Code）和 8-4（Codex）已于 2026-04-07 正式取消
+  epic-8: done
   8-1-multi-platform-detection: done
   8-2-openclaw-adapter: done
-  8-3-claude-code-adapter: backlog
-  8-4-codex-adapter: backlog
   8-5-cross-platform-validation: done
   epic-8-retrospective: optional
 
   # Epic 9：回顾清债 — 完整状态输出与文档全覆盖（Phase 2）
-  epic-9: in-progress
+  epic-9: done
   9-1-status-json-output: done
   9-2-readme-full-coverage: done
   epic-9-retrospective: optional
