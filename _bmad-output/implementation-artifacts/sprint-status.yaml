@@ -110,7 +110,7 @@ development_status:
   epic-10: in-progress
   10-1-template-design: done
   10-2-init-command-core: done
-  10-3-init-idempotent-conflict: ready-for-dev
+  10-3-init-idempotent-conflict: done
   epic-10-retrospective: optional
 
   # Epic 11：配置文件更新与卸载命令（Phase 3）
