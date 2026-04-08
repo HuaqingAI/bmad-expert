@@ -19,8 +19,10 @@ briefCount: 0
 researchCount: 5
 brainstormingCount: 1
 projectDocsCount: 0
-lastEdited: '2026-04-07'
+lastEdited: '2026-04-08'
 editHistory:
+  - date: '2026-04-08'
+    changes: 'Phase 3 规划：从 Vision 占位升级为完整规划。核心命题：工作环境初始化与配置管理。新增 init 命令、模板体系、配置文件更新、卸载命令。新增 Journey 7-8、FR51-FR63、3 条风险。移除"全局 agent 多项目内存隔离"（BMAD 已天然隔离）。"新手教练流程"并入 init 交互。'
   - date: '2026-04-07'
     changes: 'Sprint Change: Claude Code / Codex 适配器延期（架构不兼容），Phase 2 范围缩减为 OpenClaw 平台扩展。FR47 范围收窄，FR48 标为延期，NFR5 调整为 2 平台。Phase 2 路线图移除 Claude Code / Codex 适配器，添加延期记录。'
   - date: '2026-04-02'
@@ -247,6 +249,32 @@ AI 读取信息，自动执行修复步骤，无需小林介入。
 
 ---
 
+### Journey 7：阿辉的新项目（init 工作环境初始化）
+
+**人物：** 阿辉，开发者，已熟悉 bmad-expert install，开始一个新项目。
+
+**开场：** 阿辉在 HappyCapy 新 desktop 中执行了 `npx bmad-expert install`，BMAD 方法论已就位。但他发现新会话不知道默认项目是哪个，也没有工作流快捷命令。
+
+**过程：** 阿辉执行 `npx bmad-expert init`，系统检测到 workspace 结构（一个项目子目录），交互式询问项目名和工作流偏好。几秒后，workspace CLAUDE.md、project CLAUDE.md 和 workflow 文件全部就位。
+
+**结局：** 新会话启动时自动路由到正确项目，`start story` 等触发词直接可用。从"装好 BMAD"到"完整工作环境"的最后一步被填平。
+
+**揭示的能力需求：** 模板体系、init 命令、workspace 结构检测、交互式信息收集、文件生成。
+
+---
+
+### Journey 8：阿辉的升级日（配置文件跟随更新）
+
+**人物：** 同一个阿辉，三周后 bmad-expert 发布新版本，workflow 模板有改进。
+
+**过程：** 阿辉执行 `npx bmad-expert update`，系统更新 _bmad 目录后，检测到 init 生成的配置文件与新版本模板存在差异。系统备份用户当前文件，展示变更摘要，阿辉确认后完成合并。
+
+**结局：** 新版本 workflow 改进到手，阿辉自己加的自定义内容一行没丢。
+
+**揭示的能力需求：** 配置文件版本追踪、diff 展示、备份与合并策略。
+
+---
+
 ### Journey Requirements Summary
 
 | 能力 | 来源旅程 | Phase |
@@ -265,6 +293,9 @@ AI 读取信息，自动执行修复步骤，无需小林介入。
 | 多平台自动检测（无需 --platform） | Journey 4, 6 | Phase 2 |
 | OpenClaw / Claude Code / Codex 平台适配 | Journey 4, 6 | Phase 2 |
 | 跨平台体验一致性 | Journey 6 | Phase 2 |
+| 模板体系 + init 命令 | Journey 7 | Phase 3 |
+| 配置文件跟随更新 | Journey 8 | Phase 3 |
+| 卸载命令 | — | Phase 3 |
 
 ## Innovation & Novel Patterns
 
@@ -329,6 +360,8 @@ bmad-expert 是一个 npm 包形式的 CLI 工具，专为 AI 平台中介执行
 | `--output-folder <path>` | Phase 2 | 透传至 BMAD 官方安装器的产出目录参数（默认智能推断） |
 | `--user-name <name>` | Phase 2 | 透传至 BMAD 官方安装器的用户名参数（默认使用平台用户标识） |
 | `--action <type>` | Phase 2 | 透传至 BMAD 官方安装器的执行模式（install/update/quick-update，默认根据命令自动确定） |
+| `npx bmad-expert init` | Phase 3 | 初始化工作环境：生成 CLAUDE.md + workflow 配置文件 |
+| `npx bmad-expert uninstall` | Phase 3 | 卸载 BMAD 安装与 init 生成的配置文件 |
 
 ### 输出格式
 
@@ -440,11 +473,36 @@ bmad-expert 是一个 npm 包形式的 CLI 工具，专为 AI 平台中介执行
 
 ---
 
-### Phase 3 -- Vision
+### Phase 3 -- 工作环境初始化与配置管理
 
-- 完整的 BMAD 新手教练流程
-- 卸载命令与回滚机制
-- 全局 agent 多项目内存隔离
+**核心命题：** 从"只安装 BMAD 方法论"升级为"初始化完整的 AI 工作环境"——包括 CLAUDE.md 配置文件、workflow 工作流文件，以及后续的版本维护与卸载。
+
+**核心用户旅程覆盖：** Journey 7（工作环境初始化）、Journey 8（配置文件更新）
+
+**交付内容（按依赖关系排列）：**
+
+**模板体系（基础，先于命令开发）：**
+
+1. 设计规范化 workspace 级 CLAUDE.md 模板（路由默认项目、声明全局约定）
+2. 设计规范化 project 级 CLAUDE.md 模板（工作流触发词、项目编码规范引用）
+3. 设计规范化 workflow 模板（通用步骤意图描述，不绑定技术栈，执行 AI 根据项目上下文自行决定具体命令）
+
+**`bmad-expert init` 命令（依赖模板完成）：**
+
+4. `init` 命令核心逻辑：检测 workspace 结构，交互式收集项目信息
+5. 根据模板 + 用户输入生成 workspace CLAUDE.md、project CLAUDE.md、workflow 文件
+6. 幂等保护：检测已有配置文件，提示覆盖/跳过/合并
+7. 与 `install` 可串联执行但独立运作
+
+**配置文件更新（依赖 init 完成）：**
+
+8. 扩展 `update` 命令覆盖 init 生成的配置文件
+9. 用户已定制内容的冲突处理策略（备份 + diff 提示）
+
+**卸载命令：**
+
+10. `bmad-expert uninstall` 命令：清理 init 生成的文件（CLAUDE.md、workflow）+ install 安装的 _bmad 目录
+11. 卸载前确认 + 备份机制
 
 ---
 
@@ -461,6 +519,9 @@ bmad-expert 是一个 npm 包形式的 CLI 工具，专为 AI 平台中介执行
 | 平台接口更新导致适配失效 | 中 | 每平台独立集成测试 + 监控平台更新公告 |
 | Claude Code / Codex 架构不兼容 | 中 | 【已确认】两平台不支持 agent 注册架构，Phase 2 取消适配器，延期至重新设计 |
 | 智能参数推断与用户预期不符 | 低 | 提供参数透传覆盖机制，用户可显式指定任何参数 |
+| 模板通用性不足导致用户大量定制 | 中 | 模板仅描述步骤意图不绑技术栈，保持最大通用性；init 交互式收集项目特定信息 |
+| 配置文件更新时覆盖用户定制内容 | 高 | 强制备份 + diff 展示 + 用户确认，不允许静默覆盖 |
+| init 与 install 职责边界模糊 | 低 | PRD 明确分工：install 管 _bmad 方法论，init 管 CLAUDE.md + workflow 配置 |
 
 ## Functional Requirements
 
@@ -547,6 +608,28 @@ bmad-expert 是一个 npm 包形式的 CLI 工具，专为 AI 平台中介执行
 - FR49: `status --json` 输出完整的结构化安装状态数据，包含健康度（healthy/not_installed/corrupted）、逐文件完整性检查结果、当前安装版本信息
 - FR50: README 覆盖 `install`、`update`、`status`、`--json` 全部命令的使用说明，`--json` 模式以 AI 调用场景为主要说明角度
 
+### 工作环境初始化（Phase 3）
+
+- FR51: 系统提供规范化 workspace 级 CLAUDE.md 模板，包含默认项目路由和全局约定声明
+- FR52: 系统提供规范化 project 级 CLAUDE.md 模板，包含工作流触发词定义和项目编码规范引用
+- FR53: 系统提供规范化 workflow 模板，仅描述步骤意图（如"编译项目"、"运行单元测试"），不绑定特定技术栈或构建工具，由执行 AI 根据项目上下文决定具体命令
+- FR54: 系统提供 `init` 命令，检测 workspace 目录结构并交互式收集项目信息（项目名、工作流偏好等）
+- FR55: `init` 命令根据模板和用户输入在 workspace 根目录生成 CLAUDE.md，在项目目录生成 project CLAUDE.md 和 workflow 文件
+- FR56: `init` 命令在检测到已有配置文件时提供覆盖、跳过或合并选项，不静默破坏用户已有配置
+- FR57: `init` 命令与 `install` 命令独立运作，可单独执行也可串联执行
+
+### 配置文件更新（Phase 3）
+
+- FR58: `update` 命令在更新 BMAD 方法论文件的同时，检测 init 生成的配置文件与新版本模板的差异
+- FR59: 配置文件更新前自动备份用户当前文件，更新后展示变更摘要供用户确认
+- FR60: 用户已定制的内容（如自定义工作流步骤、项目特定规则）在更新过程中不被覆盖
+
+### 卸载（Phase 3）
+
+- FR61: 系统提供 `uninstall` 命令，清理 init 生成的配置文件和 install 安装的 _bmad 目录
+- FR62: `uninstall` 执行前要求用户确认，并提供备份选项
+- FR63: `uninstall` 完成后输出清理结果摘要，明确列出已删除和已保留的文件
+
 ## Non-Functional Requirements
 
 ### 性能
@@ -557,7 +640,7 @@ bmad-expert 是一个 npm 包形式的 CLI 工具，专为 AI 平台中介执行
 
 ### 兼容性
 
-- NFR4: 支持 Node.js 18+ 作为推荐版本；尽量兼容 Node.js 16+，具体下限在实现阶段测试确认
+- NFR4: 支持 Node.js 20.19+ 作为最低基线版本；推荐使用 Node.js 24 LTS，具体兼容窗口以锁定依赖和 CI 验证结果为准
 - NFR5: 在 HappyCapy、OpenClaw 两个平台的 Node.js 执行环境下，安装可成功完成（agent 文件写入 + 注册契约完成 + exit code 0），无运行时报错（Claude Code / Codex 延期至适配器架构重新设计后）
 - NFR6: 包通过 npm 公开注册表分发，无需用户配置额外认证 token 即可执行 npx
 - NFR7: 安装产生的文件操作在所有支持平台上成功执行，不因路径格式差异产生文件写入错误

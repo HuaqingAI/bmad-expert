@@ -34,28 +34,28 @@
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: 完成 OpenClaw 适配器完整实现（getInstallPath / install / check）
-  - [ ] 1.1 实现 `getInstallPath(agentId)`，路径白名单：`[cwd]/.openclaw/agents/[agentId]/`
-  - [ ] 1.2 实现 `check(agentId)`：检测安装状态，返回 `not_installed | installed | corrupted`
-  - [ ] 1.3 实现 `install(files, options)`：平台注册（降级路径：注册 CLI 不可用时输出手动命令）
-  - [ ] 1.4 更新适配器注释，移除 "Story 8.2 实现" 占位说明
+- [x] Task 1: 完成 OpenClaw 适配器完整实现（getInstallPath / install / check）
+  - [x] 1.1 实现 `getInstallPath(agentId)`，路径白名单：`[cwd]/.openclaw/agents/[agentId]/`
+  - [x] 1.2 实现 `check(agentId)`：检测安装状态，返回 `not_installed | installed | corrupted`
+  - [x] 1.3 实现 `install(files, options)`：平台注册（降级路径：注册 CLI 不可用时输出手动命令）
+  - [x] 1.4 更新适配器注释，移除 "Story 8.2 实现" 占位说明
 
-- [ ] Task 2: 创建 OpenClaw 集成测试（test/integration/openclaw.test.js）
-  - [ ] 2.1 成功安装场景：executeInstall + writeSupplementFiles + adapter.install 均被调用
-  - [ ] 2.2 幂等检测场景：已安装时 throw BmadError(E006)
-  - [ ] 2.3 错误场景：EACCES 权限拒绝时抛出 BmadError(E004)
-  - [ ] 2.4 降级场景：注册 CLI 不可用时安装仍正常完成
-  - [ ] 2.5 返回结构化数据：包含 platform / agentId / installPath / duration
+- [x] Task 2: 创建 OpenClaw 集成测试（test/integration/openclaw.test.js）
+  - [x] 2.1 成功安装场景：executeInstall + writeSupplementFiles + adapter.install 均被调用
+  - [x] 2.2 幂等检测场景：已安装时 throw BmadError(E006)
+  - [x] 2.3 错误场景：EACCES 权限拒绝时抛出 BmadError(E004)
+  - [x] 2.4 降级场景：注册 CLI 不可用时安装仍正常完成
+  - [x] 2.5 返回结构化数据：包含 platform / agentId / installPath / duration
 
-- [ ] Task 3: 创建跨平台一致性验证测试（test/cross-platform.test.js）
-  - [ ] 3.1 对比两平台集成测试：进度输出格式一致（AC2）
-  - [ ] 3.2 对比两平台集成测试：exit code 语义一致（AC2）
-  - [ ] 3.3 平台探针耗时测试：两平台各 ≤ 1 秒（AC3 / NFR15）
-  - [ ] 3.4 Node.js 版本兼容性验证：检测 process.version 满足 ≥20.19.0（AC4）
+- [x] Task 3: 创建跨平台一致性验证测试（test/cross-platform.test.js）
+  - [x] 3.1 对比两平台集成测试：进度输出格式一致（AC2）
+  - [x] 3.2 对比两平台集成测试：exit code 语义一致（AC2）
+  - [x] 3.3 平台探针耗时测试：两平台各 ≤ 1 秒（AC3 / NFR15）
+  - [x] 3.4 Node.js 版本兼容性验证：检测 process.version 满足 ≥20.19.0（AC4）
 
-- [ ] Task 4: 运行完整测试套件，确认零回归
-  - [ ] 4.1 `npm test` 全量通过
-  - [ ] 4.2 确认新测试覆盖两平台的三类场景
+- [x] Task 4: 运行完整测试套件，确认零回归
+  - [x] 4.1 `npm test` 全量通过（335 tests passed）
+  - [x] 4.2 确认新测试覆盖两平台的三类场景
 
 ---
 
@@ -137,4 +137,4 @@
 
 ## Status
 
-done
+in-progress
