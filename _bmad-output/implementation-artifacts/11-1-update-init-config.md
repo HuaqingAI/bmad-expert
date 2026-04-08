@@ -1,6 +1,6 @@
 # Story 11.1: update 命令扩展 — init 配置文件跟随更新
 
-Status: review
+Status: done
 
 ---
 
