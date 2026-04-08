@@ -7,7 +7,7 @@ describe('EXIT_CODES', () => {
     expect(typeof EXIT_CODES).toBe('object')
   })
 
-  it('contains all 7 constants with correct values', () => {
+  it('contains all 8 constants with correct values', () => {
     expect(EXIT_CODES.SUCCESS).toBe(0)
     expect(EXIT_CODES.GENERAL_ERROR).toBe(1)
     expect(EXIT_CODES.INVALID_ARGS).toBe(2)
@@ -15,6 +15,7 @@ describe('EXIT_CODES', () => {
     expect(EXIT_CODES.PERMISSION_DENIED).toBe(4)
     expect(EXIT_CODES.NETWORK_ERROR).toBe(5)
     expect(EXIT_CODES.ALREADY_INSTALLED).toBe(6)
+    expect(EXIT_CODES.NOT_INSTALLED).toBe(7)
   })
 
   it('all constant values are integers', () => {
@@ -23,8 +24,8 @@ describe('EXIT_CODES', () => {
     }
   })
 
-  it('has exactly 7 constants', () => {
-    expect(Object.keys(EXIT_CODES)).toHaveLength(7)
+  it('has exactly 8 constants', () => {
+    expect(Object.keys(EXIT_CODES)).toHaveLength(8)
   })
 
   it('SUCCESS is 0 (falsy)', () => {
