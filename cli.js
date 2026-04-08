@@ -59,12 +59,14 @@ program
   .description('安全更新框架文件，保留用户 memory 与个性化配置（Growth）')
   .option('--platform <name>', '指定目标平台（happycapy/cursor/claude-code）')
   .option('--agent-id <id>', 'Agent 标识符', 'bmad-expert')
+  .option('--yes', '自动确认所有 init 配置文件更新')
   .option('--json', '输出结构化 JSON 结果（AI 调用专用）')
   .action(async (options) => {
     if (options.json) setJsonMode(true)
     const result = await update({
       platform: options.platform ?? null,
       agentId: options.agentId,
+      yes: options.yes ?? false,
     })
     if (options.json) {
       printJSON({ success: true, ...result })
