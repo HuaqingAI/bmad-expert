@@ -114,7 +114,7 @@ development_status:
   epic-10-retrospective: optional
 
   # Epic 11：配置文件更新与卸载命令（Phase 3）
-  epic-11: backlog
-  11-1-update-init-config: backlog
+  epic-11: in-progress
+  11-1-update-init-config: done
   11-2-uninstall-command: backlog
   epic-11-retrospective: optional
