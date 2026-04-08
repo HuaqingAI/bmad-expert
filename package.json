@@ -1,6 +1,6 @@
 {
   "name": "bmad-expert",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "BMAD Agent 安装器与新手教练 - 一条命令完成跨平台 BMAD 安装",
   "type": "module",
   "bin": {
