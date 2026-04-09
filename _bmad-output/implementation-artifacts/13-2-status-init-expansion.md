@@ -1,6 +1,6 @@
 # Story 13.2: status init 状态扩展
 
-Status: review
+Status: done
 
 ## Story
 
