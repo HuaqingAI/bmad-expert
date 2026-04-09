@@ -41,6 +41,28 @@ vi.mock('../lib/initializer.js', () => ({
   TEMPLATES_DIR: '/mock/templates',
 }))
 
+// mock section-manager.js — 标记化段落管理引擎（Phase 4 Story 12.3）
+vi.mock('../lib/section-manager.js', () => ({
+  replaceBmadSection: vi.fn((content, _sectionId, newSection) => {
+    // 默认：模拟替换成功（返回替换后的内容）
+    return content.replace(/<!-- bmad-[\w-]+ -->[\s\S]*?<!-- \/bmad-[\w-]+ -->/, newSection)
+  }),
+  extractBmadSection: vi.fn((content, sectionId) => {
+    // 默认：从模板内容中提取标记段落
+    const open = `<!-- ${sectionId} -->`
+    const close = `<!-- /${sectionId} -->`
+    const openIdx = content.indexOf(open)
+    const closeIdx = content.indexOf(close)
+    if (openIdx !== -1 && closeIdx !== -1) {
+      return content.substring(openIdx, closeIdx + close.length)
+    }
+    return `${open}\nnew managed content\n${close}`
+  }),
+  hasBmadSection: vi.fn().mockReturnValue(true),
+  removeBmadSection: vi.fn(),
+  wrapBmadSection: vi.fn(),
+}))
+
 // mock readline — 用于模拟用户交互输入（AC2 测试需要）
 vi.mock('readline', () => ({
   createInterface: vi.fn().mockReturnValue({
@@ -248,20 +270,31 @@ describe('update', () => {
   })
 })
 
-// ─── init 配置文件更新（Story 11.1）──────────────────────────────────────
+// ─── init 配置文件更新（Story 11.1 + Phase 4 Story 12.3）─────────────────
 
 describe('updateInitConfigs', () => {
   let fsMock
   let generateFileContentMock
+  let sectionManagerMock
 
+  // Phase 4：MOCK_MANIFEST 包含 action 字段
   const MOCK_MANIFEST = {
     version: '1.0.0',
     createdAt: '2026-04-08T10:00:00Z',
     templateVersion: '0.1.0',
     defaultProject: 'my-project',
     files: [
-      { path: 'CLAUDE.md', type: 'workspace-claude' },
-      { path: 'my-project/CLAUDE.md', type: 'project-claude' },
+      { path: 'CLAUDE.md', type: 'workspace-claude', action: 'appended' },
+      { path: 'my-project/CLAUDE.md', type: 'project-claude', action: 'created' },
+    ],
+  }
+
+  // 包含 workflow 文件的清单（用于框架文件确认流程测试）
+  const MOCK_MANIFEST_WITH_WORKFLOW = {
+    ...MOCK_MANIFEST,
+    files: [
+      ...MOCK_MANIFEST.files,
+      { path: 'my-project/workflow/dev.md', type: 'workflow', action: 'created' },
     ],
   }
 
@@ -269,17 +302,18 @@ describe('updateInitConfigs', () => {
     vi.clearAllMocks()
     fsMock = (await import('fs-extra')).default
     generateFileContentMock = (await import('../lib/initializer.js')).generateFileContent
+    sectionManagerMock = await import('../lib/section-manager.js')
 
     fsMock.pathExists.mockResolvedValue(false)
     fsMock.readFile.mockResolvedValue('old content')
     fsMock.outputFile.mockResolvedValue(undefined)
     fsMock.copy.mockResolvedValue(undefined)
-    generateFileContentMock.mockResolvedValue('new template content')
+    generateFileContentMock.mockResolvedValue('<!-- bmad-workspace-config -->\nnew managed content\n<!-- /bmad-workspace-config -->')
   })
 
-  // ─── AC3: 无 .bmad-init.json 时跳过 ──────────────────────────────────
+  // ─── 无 .bmad-init.json 时跳过 ──────────────────────────────────────
 
-  describe('无 .bmad-init.json（AC3）', () => {
+  describe('无 .bmad-init.json', () => {
     it('pathExists 返回 false 时跳过，返回 skipped: true', async () => {
       fsMock.pathExists.mockResolvedValue(false)
 
@@ -297,117 +331,7 @@ describe('updateInitConfigs', () => {
 
       await updateInitConfigs({ yes: false, cwd: '/workspace', currentVersion: '0.2.0' })
 
-      // readFile 不应被调用（因为 pathExists 返回 false 直接跳过）
       expect(fsMock.readFile).not.toHaveBeenCalled()
-    })
-  })
-
-  // ─── AC1: 有差异时备份 + 写入 ──────────────────────────────────────────
-
-  describe('有差异时备份并写入（AC1）', () => {
-    beforeEach(() => {
-      // .bmad-init.json 存在
-      fsMock.pathExists.mockImplementation((p) => {
-        if (String(p).includes('.bmad-init.json')) return Promise.resolve(true)
-        // 当前文件存在（用于备份）
-        return Promise.resolve(true)
-      })
-
-      fsMock.readFile.mockImplementation((p) => {
-        if (String(p).includes('.bmad-init.json')) {
-          return Promise.resolve(JSON.stringify(MOCK_MANIFEST))
-        }
-        return Promise.resolve('old content')
-      })
-
-      // 模板生成不同内容 → 有差异
-      generateFileContentMock.mockResolvedValue('new template content')
-    })
-
-    it('检测到差异时备份旧文件', async () => {
-      const result = await updateInitConfigs({
-        yes: true,
-        cwd: '/workspace',
-        currentVersion: '0.2.0',
-      })
-
-      // 应为每个有差异的文件调用 copy（备份）
-      expect(fsMock.copy).toHaveBeenCalledTimes(2)
-      for (const [src, dest] of fsMock.copy.mock.calls) {
-        expect(dest).toMatch(/\.bak\.\d+$/)
-      }
-      expect(result.filesUpdated).toBe(2)
-    })
-
-    it('备份后写入新内容', async () => {
-      await updateInitConfigs({
-        yes: true,
-        cwd: '/workspace',
-        currentVersion: '0.2.0',
-      })
-
-      // outputFile 应被调用：2 个文件写入 + 1 个 .bmad-init.json 更新 = 3
-      const writeCalls = fsMock.outputFile.mock.calls
-      const fileWrites = writeCalls.filter(([p]) => !String(p).includes('.bmad-init.json'))
-      expect(fileWrites.length).toBe(2)
-      for (const [, content] of fileWrites) {
-        expect(content).toBe('new template content')
-      }
-    })
-
-    it('更新完成后 .bmad-init.json 中 templateVersion 更新', async () => {
-      await updateInitConfigs({
-        yes: true,
-        cwd: '/workspace',
-        currentVersion: '0.2.0',
-      })
-
-      const manifestWrite = fsMock.outputFile.mock.calls.find(([p]) =>
-        String(p).includes('.bmad-init.json')
-      )
-      expect(manifestWrite).toBeDefined()
-      const written = JSON.parse(manifestWrite[1].trim())
-      expect(written.templateVersion).toBe('0.2.0')
-    })
-  })
-
-  // ─── AC1: 无差异时跳过 ────────────────────────────────────────────────
-
-  describe('无差异时跳过写入（AC1）', () => {
-    it('配置无差异时 filesSkipped 增加，不写入', async () => {
-      fsMock.pathExists.mockImplementation((p) => {
-        if (String(p).includes('.bmad-init.json')) return Promise.resolve(true)
-        return Promise.resolve(true)
-      })
-      fsMock.readFile.mockImplementation((p) => {
-        if (String(p).includes('.bmad-init.json')) {
-          return Promise.resolve(JSON.stringify(MOCK_MANIFEST))
-        }
-        // 当前内容与生成内容相同
-        return Promise.resolve('same content')
-      })
-      generateFileContentMock.mockResolvedValue('same content')
-
-      const result = await updateInitConfigs({
-        yes: true,
-        cwd: '/workspace',
-        currentVersion: '0.2.0',
-      })
-
-      expect(result.filesUpdated).toBe(0)
-      expect(result.filesSkipped).toBe(2)
-      // 不应有文件备份（无 copy）
-      expect(fsMock.copy).not.toHaveBeenCalled()
-      // templateVersion 仍会被更新（P2 修复：即使无文件差异也封存版本号）
-      const manifestWrites = fsMock.outputFile.mock.calls.filter(([p]) =>
-        String(p).includes('.bmad-init.json')
-      )
-      expect(manifestWrites.length).toBe(1)
-      // 不应有配置文件写入
-      const fileWrites = fsMock.outputFile.mock.calls.filter(([p]) =>
-        !String(p).includes('.bmad-init.json')
-      )
-      expect(fileWrites.length).toBe(0)
     })
   })
 
@@ -429,23 +353,78 @@ describe('updateInitConfigs', () => {
     })
   })
 
-  // ─── AC2: 用户拒绝时保留原文件 ────────────────────────────────────────
+  // ─── AC1: 标记管理文件精准段落替换（workspace-claude）───────────────────
 
-  describe('用户拒绝更新时保留原文件（AC2）', () => {
-    it('用户输入 n 时文件保持不变', async () => {
+  describe('标记管理文件精准段落替换（AC1, AC2）', () => {
+    const CURRENT_CONTENT_WITH_MARKERS =
+      '# Claude\n\nMy custom rules\n\n<!-- bmad-workspace-config -->\nold managed content\n<!-- /bmad-workspace-config -->\n\nMore custom content'
+
+    beforeEach(() => {
       fsMock.pathExists.mockImplementation((p) => {
         if (String(p).includes('.bmad-init.json')) return Promise.resolve(true)
         return Promise.resolve(true)
       })
+
       fsMock.readFile.mockImplementation((p) => {
         if (String(p).includes('.bmad-init.json')) {
           return Promise.resolve(JSON.stringify(MOCK_MANIFEST))
         }
-        return Promise.resolve('old content')
+        return Promise.resolve(CURRENT_CONTENT_WITH_MARKERS)
       })
-      generateFileContentMock.mockResolvedValue('new template content')
 
-      // 通过 file-scope mock 配置 readline 模拟用户拒绝
+      // 新模板包含更新后的标记段落
+      generateFileContentMock.mockResolvedValue(
+        '<!-- bmad-workspace-config -->\nnew managed content\n<!-- /bmad-workspace-config -->'
+      )
+
+      // section-manager mocks
+      sectionManagerMock.extractBmadSection.mockReturnValue(
+        '<!-- bmad-workspace-config -->\nnew managed content\n<!-- /bmad-workspace-config -->'
+      )
+      sectionManagerMock.replaceBmadSection.mockReturnValue(
+        '# Claude\n\nMy custom rules\n\n<!-- bmad-workspace-config -->\nnew managed content\n<!-- /bmad-workspace-config -->\n\nMore custom content'
+      )
+    })
+
+    it('调用 extractBmadSection 从新模板中提取标记段落', async () => {
+      await updateInitConfigs({
+        yes: true,
+        cwd: '/workspace',
+        currentVersion: '0.2.0',
+      })
+
+      expect(sectionManagerMock.extractBmadSection).toHaveBeenCalledWith(
+        expect.any(String),
+        'bmad-workspace-config'
+      )
+    })
+
+    it('调用 replaceBmadSection 精准替换标记段落', async () => {
+      await updateInitConfigs({
+        yes: true,
+        cwd: '/workspace',
+        currentVersion: '0.2.0',
+      })
+
+      expect(sectionManagerMock.replaceBmadSection).toHaveBeenCalledWith(
+        CURRENT_CONTENT_WITH_MARKERS,
+        'bmad-workspace-config',
+        expect.stringContaining('bmad-workspace-config')
+      )
+    })
+
+    it('标记管理文件不创建备份（用户内容不受影响）', async () => {
+      await updateInitConfigs({
+        yes: true,
+        cwd: '/workspace',
+        currentVersion: '0.2.0',
+      })
+
+      // 不应有 copy 调用（标记管理文件无需备份）
+      expect(fsMock.copy).not.toHaveBeenCalled()
+    })
+
+    it('标记管理文件不需要用户确认', async () => {
       const { createInterface } = await import('readline')
       createInterface.mockReturnValue({
         question: vi.fn((prompt, cb) => cb('n')),
@@ -459,23 +438,78 @@ describe('updateInitConfigs', () => {
         currentVersion: '0.2.0',
       })
 
-      // 文件应被备份但不写入新内容
-      expect(result.filesSkipped).toBe(2)
-      expect(result.filesUpdated).toBe(0)
-      // 不应更新 .bmad-init.json（无文件被更新，且有 generationErrors=0 但 filesUpdated=0）
-      // templateVersion 仍会更新因为 generationErrors === 0（P2 修复）
-      // 但不应写入文件内容
+      // 即使用户不确认，标记管理文件仍应更新（无确认流程）
+      expect(result.filesUpdated).toBe(2)
+    })
+
+    it('写入内容保留用户自定义部分', async () => {
+      await updateInitConfigs({
+        yes: true,
+        cwd: '/workspace',
+        currentVersion: '0.2.0',
+      })
+
       const fileWrites = fsMock.outputFile.mock.calls.filter(([p]) =>
         !String(p).includes('.bmad-init.json')
       )
-      expect(fileWrites.length).toBe(0)
+      for (const [, content] of fileWrites) {
+        // 写入的内容应包含用户自定义部分
+        expect(content).toContain('My custom rules')
+        expect(content).toContain('More custom content')
+        // 也应包含新的 managed content
+        expect(content).toContain('new managed content')
+      }
+    })
+
+    it('project-claude 使用 bmad-project-config sectionId', async () => {
+      const projectManifest = {
+        ...MOCK_MANIFEST,
+        files: [
+          { path: 'my-project/CLAUDE.md', type: 'project-claude', action: 'created' },
+        ],
+      }
+
+      fsMock.readFile.mockImplementation((p) => {
+        if (String(p).includes('.bmad-init.json')) {
+          return Promise.resolve(JSON.stringify(projectManifest))
+        }
+        return Promise.resolve('# CLAUDE.md\n\n<!-- bmad-project-config -->\nold\n<!-- /bmad-project-config -->')
+      })
+
+      generateFileContentMock.mockResolvedValue(
+        '<!-- bmad-project-config -->\nnew project content\n<!-- /bmad-project-config -->'
+      )
+      sectionManagerMock.extractBmadSection.mockReturnValue(
+        '<!-- bmad-project-config -->\nnew project content\n<!-- /bmad-project-config -->'
+      )
+      sectionManagerMock.replaceBmadSection.mockReturnValue(
+        '# CLAUDE.md\n\n<!-- bmad-project-config -->\nnew project content\n<!-- /bmad-project-config -->'
+      )
+
+      await updateInitConfigs({
+        yes: true,
+        cwd: '/workspace',
+        currentVersion: '0.2.0',
+      })
+
+      expect(sectionManagerMock.extractBmadSection).toHaveBeenCalledWith(
+        expect.any(String),
+        'bmad-project-config'
+      )
+      expect(sectionManagerMock.replaceBmadSection).toHaveBeenCalledWith(
+        expect.any(String),
+        'bmad-project-config',
+        expect.stringContaining('bmad-project-config')
+      )
     })
   })
 
-  // ─── AC4: --yes 模式自动覆盖 ──────────────────────────────────────────
+  // ─── 标记段落无差异时跳过 ─────────────────────────────────────────────
 
-  describe('--yes 模式自动覆盖（AC4）', () => {
-    it('yes 模式下不暂停确认，直接备份覆盖', async () => {
+  describe('标记段落无差异时跳过', () => {
+    it('replaceBmadSection 返回内容与原内容相同时跳过', async () => {
+      const content = '# Claude\n\n<!-- bmad-workspace-config -->\nmanaged\n<!-- /bmad-workspace-config -->'
+
       fsMock.pathExists.mockImplementation((p) => {
         if (String(p).includes('.bmad-init.json')) return Promise.resolve(true)
         return Promise.resolve(true)
@@ -484,9 +518,193 @@ describe('updateInitConfigs', () => {
         if (String(p).includes('.bmad-init.json')) {
           return Promise.resolve(JSON.stringify(MOCK_MANIFEST))
         }
-        return Promise.resolve('old content')
+        return Promise.resolve(content)
       })
-      generateFileContentMock.mockResolvedValue('new template content')
+
+      // replaceBmadSection 返回原内容（无变化）
+      sectionManagerMock.replaceBmadSection.mockReturnValue(content)
+      sectionManagerMock.extractBmadSection.mockReturnValue('<!-- bmad-workspace-config -->\nmanaged\n<!-- /bmad-workspace-config -->')
+
+      const result = await updateInitConfigs({
+        yes: true,
+        cwd: '/workspace',
+        currentVersion: '0.2.0',
+      })
+
+      expect(result.filesUpdated).toBe(0)
+      expect(result.filesSkipped).toBe(2)
+      // 只有 .bmad-init.json 更新（templateVersion）
+      const fileWrites = fsMock.outputFile.mock.calls.filter(([p]) =>
+        !String(p).includes('.bmad-init.json')
+      )
+      expect(fileWrites.length).toBe(0)
+    })
+  })
+
+  // ─── AC3: 框架/workflow 文件确认+备份 ──────────────────────────────────
+
+  describe('框架/workflow 文件确认+备份（AC3）', () => {
+    beforeEach(() => {
+      fsMock.pathExists.mockImplementation((p) => {
+        if (String(p).includes('.bmad-init.json')) return Promise.resolve(true)
+        return Promise.resolve(true)
+      })
+
+      fsMock.readFile.mockImplementation((p) => {
+        if (String(p).includes('.bmad-init.json')) {
+          return Promise.resolve(JSON.stringify(MOCK_MANIFEST_WITH_WORKFLOW))
+        }
+        if (String(p).includes('workflow')) {
+          return Promise.resolve('old workflow content')
+        }
+        return Promise.resolve('# Claude\n\n<!-- bmad-workspace-config -->\nold\n<!-- /bmad-workspace-config -->')
+      })
+
+      generateFileContentMock.mockResolvedValue('new workflow content')
+
+      // 标记管理文件无差异（不触发更新）
+      sectionManagerMock.extractBmadSection.mockReturnValue('<!-- bmad-workspace-config -->\nold\n<!-- /bmad-workspace-config -->')
+      sectionManagerMock.replaceBmadSection.mockImplementation((content) => content) // 无变化
+    })
+
+    it('workflow 文件有差异时创建备份', async () => {
+      await updateInitConfigs({
+        yes: true,
+        cwd: '/workspace',
+        currentVersion: '0.2.0',
+      })
+
+      // 应有备份调用（仅 workflow 文件）
+      expect(fsMock.copy).toHaveBeenCalledTimes(1)
+      const [, backupPath] = fsMock.copy.mock.calls[0]
+      expect(backupPath).toMatch(/\.bak\.\d+$/)
+    })
+
+    it('交互模式下用户拒绝 workflow 更新，文件保持不变', async () => {
+      const { createInterface } = await import('readline')
+      createInterface.mockReturnValue({
+        question: vi.fn((prompt, cb) => cb('n')),
+        close: vi.fn(),
+        on: vi.fn().mockReturnThis(),
+      })
+
+      const result = await updateInitConfigs({
+        yes: false,
+        cwd: '/workspace',
+        currentVersion: '0.2.0',
+      })
+
+      // 标记文件 2 个跳过（无差异）+ workflow 1 个跳过（用户拒绝）
+      expect(result.filesSkipped).toBe(3)
+      expect(result.filesUpdated).toBe(0)
+    })
+  })
+
+  // ─── AC4: --yes 模式自动覆盖 ──────────────────────────────────────────
+
+  describe('--yes 模式自动覆盖（AC4）', () => {
+    it('yes 模式下 workflow 文件不暂停确认，直接备份覆盖', async () => {
+      fsMock.pathExists.mockImplementation((p) => {
+        if (String(p).includes('.bmad-init.json')) return Promise.resolve(true)
+        return Promise.resolve(true)
+      })
+      fsMock.readFile.mockImplementation((p) => {
+        if (String(p).includes('.bmad-init.json')) {
+          return Promise.resolve(JSON.stringify(MOCK_MANIFEST_WITH_WORKFLOW))
+        }
+        if (String(p).includes('workflow')) {
+          return Promise.resolve('old workflow content')
+        }
+        return Promise.resolve('# Claude\n\n<!-- bmad-workspace-config -->\nold\n<!-- /bmad-workspace-config -->')
+      })
+
+      generateFileContentMock.mockResolvedValue('new content')
+      sectionManagerMock.extractBmadSection.mockReturnValue('<!-- bmad-workspace-config -->\nnew\n<!-- /bmad-workspace-config -->')
+      sectionManagerMock.replaceBmadSection.mockReturnValue('# Claude\n\n<!-- bmad-workspace-config -->\nnew\n<!-- /bmad-workspace-config -->')
+
+      const result = await updateInitConfigs({
+        yes: true,
+        cwd: '/workspace',
+        currentVersion: '0.2.0',
+      })
+
+      // 标记文件 2 个 + workflow 1 个 = 3
+      expect(result.filesUpdated).toBe(3)
+      expect(result.skipped).toBe(false)
+    })
+  })
+
+  // ─── AC5: --force 跳过版本门控 ────────────────────────────────────────
+
+  describe('--force 跳过版本门控（AC5）', () => {
+    it('版本相同但 force=true 时不跳过，执行更新流程', async () => {
+      const sameVersionManifest = { ...MOCK_MANIFEST, templateVersion: '0.2.0' }
+      fsMock.pathExists.mockImplementation((p) => {
+        if (String(p).includes('.bmad-init.json')) return Promise.resolve(true)
+        return Promise.resolve(true)
+      })
+      fsMock.readFile.mockImplementation((p) => {
+        if (String(p).includes('.bmad-init.json')) {
+          return Promise.resolve(JSON.stringify(sameVersionManifest))
+        }
+        return Promise.resolve('# Claude\n\n<!-- bmad-workspace-config -->\nold\n<!-- /bmad-workspace-config -->')
+      })
+
+      sectionManagerMock.extractBmadSection.mockReturnValue('<!-- bmad-workspace-config -->\nnew\n<!-- /bmad-workspace-config -->')
+      sectionManagerMock.replaceBmadSection.mockReturnValue('# Claude\n\n<!-- bmad-workspace-config -->\nnew\n<!-- /bmad-workspace-config -->')
+
+      const result = await updateInitConfigs({
+        yes: true,
+        force: true,
+        cwd: '/workspace',
+        currentVersion: '0.2.0',
+      })
+
+      expect(result.skipped).toBe(false)
+      expect(result.filesUpdated).toBe(2)
+    })
+
+    it('版本相同且 force=false 时跳过（默认行为）', async () => {
+      const sameVersionManifest = { ...MOCK_MANIFEST, templateVersion: '0.2.0' }
+      fsMock.pathExists.mockResolvedValue(true)
+      fsMock.readFile.mockResolvedValue(JSON.stringify(sameVersionManifest))
+
+      const result = await updateInitConfigs({
+        yes: false,
+        force: false,
+        cwd: '/workspace',
+        currentVersion: '0.2.0',
+      })
+
+      expect(result).toEqual({ skipped: true, filesUpdated: 0, filesSkipped: 0 })
+    })
+  })
+
+  // ─── 向后兼容（无 action 字段）────────────────────────────────────────
+
+  describe('向后兼容（无 action 字段）', () => {
+    it('无 action 字段的 manifest 文件仍能正常处理', async () => {
+      const legacyManifest = {
+        ...MOCK_MANIFEST,
+        files: [
+          { path: 'CLAUDE.md', type: 'workspace-claude' },
+          { path: 'my-project/CLAUDE.md', type: 'project-claude' },
+        ],
+      }
+
+      fsMock.pathExists.mockImplementation((p) => {
+        if (String(p).includes('.bmad-init.json')) return Promise.resolve(true)
+        return Promise.resolve(true)
+      })
+      fsMock.readFile.mockImplementation((p) => {
+        if (String(p).includes('.bmad-init.json')) {
+          return Promise.resolve(JSON.stringify(legacyManifest))
+        }
+        return Promise.resolve('# Claude\n\n<!-- bmad-workspace-config -->\nold\n<!-- /bmad-workspace-config -->')
+      })
+
+      sectionManagerMock.extractBmadSection.mockReturnValue('<!-- bmad-workspace-config -->\nnew\n<!-- /bmad-workspace-config -->')
+      sectionManagerMock.replaceBmadSection.mockReturnValue('# Claude\n\n<!-- bmad-workspace-config -->\nnew\n<!-- /bmad-workspace-config -->')
 
       const result = await updateInitConfigs({
         yes: true,
@@ -499,7 +717,39 @@ describe('updateInitConfigs', () => {
     })
   })
 
-  // ─── .bmad-init.json 解析失败 ─────────────────────────────────────────
+  // ─── .bmad-init.json 更新 ──────────────────────────────────────────────
+
+  describe('templateVersion 更新', () => {
+    it('更新完成后 .bmad-init.json 中 templateVersion 更新', async () => {
+      fsMock.pathExists.mockImplementation((p) => {
+        if (String(p).includes('.bmad-init.json')) return Promise.resolve(true)
+        return Promise.resolve(true)
+      })
+      fsMock.readFile.mockImplementation((p) => {
+        if (String(p).includes('.bmad-init.json')) {
+          return Promise.resolve(JSON.stringify(MOCK_MANIFEST))
+        }
+        return Promise.resolve('# Claude\n\n<!-- bmad-workspace-config -->\nold\n<!-- /bmad-workspace-config -->')
+      })
+      sectionManagerMock.extractBmadSection.mockReturnValue('<!-- bmad-workspace-config -->\nnew\n<!-- /bmad-workspace-config -->')
+      sectionManagerMock.replaceBmadSection.mockReturnValue('# Claude\n\n<!-- bmad-workspace-config -->\nnew\n<!-- /bmad-workspace-config -->')
+
+      await updateInitConfigs({
+        yes: true,
+        cwd: '/workspace',
+        currentVersion: '0.2.0',
+      })
+
+      const manifestWrite = fsMock.outputFile.mock.calls.find(([p]) =>
+        String(p).includes('.bmad-init.json')
+      )
+      expect(manifestWrite).toBeDefined()
+      const written = JSON.parse(manifestWrite[1].trim())
+      expect(written.templateVersion).toBe('0.2.0')
+    })
+  })
+
+  // ─── 异常处理 ─────────────────────────────────────────────────────────
 
   describe('异常处理', () => {
     it('.bmad-init.json 解析失败时抛出 BmadError E001', async () => {

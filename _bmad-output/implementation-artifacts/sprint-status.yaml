@@ -124,7 +124,7 @@ development_status:
   epic-12: in-progress
   12-1-section-manager: done
   12-2-init-project-claude-markers: done
-  12-3-update-precision-replace: backlog
+  12-3-update-precision-replace: done
   12-4-uninstall-precision-remove: done
   epic-12-retrospective: optional
 
