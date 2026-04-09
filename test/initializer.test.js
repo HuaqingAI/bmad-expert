@@ -1081,7 +1081,7 @@ describe('init appended 摘要输出 (Story 10-4)', () => {
     fsMock.copy.mockResolvedValue(undefined)
   })
 
-  it('--yes 模式 append 场景在摘要中显示追加', async () => {
+  it('--yes 模式 append 场景输出逐文件摘要（FR72）', async () => {
     fsMock.pathExists
       .mockResolvedValueOnce(true)   // .git
       .mockResolvedValueOnce(false)  // _bmad
@@ -1111,7 +1111,10 @@ describe('init appended 摘要输出 (Story 10-4)', () => {
 
     const { printSuccess } = await import('../lib/output.js')
     const successMsg = printSuccess.mock.calls[0][0]
-    expect(successMsg).toContain('追加')
+    // FR72: 逐文件格式 {path}: {action}
+    expect(successMsg).toContain('CLAUDE.md: appended')
+    expect(successMsg).toContain('my-project/CLAUDE.md: created')
+    expect(successMsg).toContain('my-project/workflow/story-dev-workflow-single-repo.md: created')
   })
 })
 
@@ -1315,5 +1318,143 @@ describe('--project 参数 (Story 12-2)', () => {
     const result = await init({ project: 'direct-app', cwd: WORKSPACE })
     expect(result.defaultProject).toBe('direct-app')
     expect(fsMock.readdir).not.toHaveBeenCalled()
+  })
+})
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Story 13-1: --yes 逐文件摘要格式（FR72）
+// ═══════════════════════════════════════════════════════════════════════════════
+
+describe('init --yes 逐文件摘要格式 (Story 13-1, FR72)', () => {
+  let fsMock
+
+  beforeEach(async () => {
+    vi.clearAllMocks()
+    fsMock = (await import('fs-extra')).default
+
+    fsMock.readdir.mockResolvedValue([
+      { name: 'my-project', isDirectory: () => true },
+    ])
+    fsMock.outputFile.mockResolvedValue(undefined)
+    fsMock.ensureDir.mockResolvedValue(undefined)
+    fsMock.copy.mockResolvedValue(undefined)
+  })
+
+  it('全新安装时摘要显示 created 格式', async () => {
+    fsMock.pathExists
+      .mockResolvedValueOnce(true)   // .git
+      .mockResolvedValueOnce(false)  // _bmad
+      .mockResolvedValueOnce(false)  // package.json
+      .mockResolvedValueOnce(false)  // CLAUDE.md not exists
+      .mockResolvedValueOnce(false)  // project CLAUDE.md not exists
+      .mockResolvedValueOnce(false)  // workflow not exists
+      .mockResolvedValueOnce(false)  // .bmad-init.json not exists
+
+    fsMock.readFile.mockImplementation((p) => {
+      const path = String(p)
+      if (path.includes('workspace-claude.md')) return Promise.resolve('# Claude\n<!-- bmad-workspace-config -->\n<!-- /bmad-workspace-config -->')
+      if (path.includes('project-claude.md')) return Promise.resolve('# PROJECT_NAME')
+      if (path.includes('workflow-single-repo.md')) return Promise.resolve('# Workflow')
+      return Promise.resolve('')
+    })
+
+    await init({ yes: true, cwd: WORKSPACE })
+
+    const { printSuccess } = await import('../lib/output.js')
+    const successMsg = printSuccess.mock.calls[0][0]
+    expect(successMsg).toContain('CLAUDE.md: created')
+    expect(successMsg).toContain('my-project/CLAUDE.md: created')
+    expect(successMsg).toContain('my-project/workflow/story-dev-workflow-single-repo.md: created')
+  })
+
+  it('混合场景摘要包含每个文件的独立 action', async () => {
+    fsMock.pathExists
+      .mockResolvedValueOnce(true)   // .git
+      .mockResolvedValueOnce(false)  // _bmad
+      .mockResolvedValueOnce(false)  // package.json
+      .mockResolvedValueOnce(true)   // CLAUDE.md exists
+      .mockResolvedValueOnce(false)  // project CLAUDE.md not exists
+      .mockResolvedValueOnce(true)   // workflow exists
+      .mockResolvedValueOnce(false)  // .bmad-init.json not exists
+
+    fsMock.readFile.mockImplementation((p) => {
+      const path = String(p)
+      if (path.endsWith('/CLAUDE.md') && !path.includes('my-project')) {
+        return Promise.resolve('# HappyCapy\n')
+      }
+      if (path.includes('workspace-claude.md')) {
+        return Promise.resolve('# Claude\n\n<!-- bmad-workspace-config -->\n## Default\nPROJECT_NAME\n<!-- /bmad-workspace-config -->')
+      }
+      if (path.includes('project-claude.md')) return Promise.resolve('# PROJECT_NAME')
+      if (path.includes('workflow-single-repo.md')) return Promise.resolve('# Workflow')
+      return Promise.resolve('')
+    })
+
+    await init({ yes: true, cwd: WORKSPACE })
+
+    const { printSuccess } = await import('../lib/output.js')
+    const successMsg = printSuccess.mock.calls[0][0]
+    // workspace CLAUDE.md appended (no markers), project created, workflow skipped
+    expect(successMsg).toContain('CLAUDE.md: appended')
+    expect(successMsg).toContain('my-project/CLAUDE.md: created')
+    expect(successMsg).toContain('my-project/workflow/story-dev-workflow-single-repo.md: skipped')
+  })
+})
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Story 13-1: 交互菜单"推荐"标签（FR75）
+// ═══════════════════════════════════════════════════════════════════════════════
+
+describe('交互菜单推荐标签 (Story 13-1, FR75)', () => {
+  let fsMock
+
+  beforeEach(async () => {
+    vi.clearAllMocks()
+    fsMock = (await import('fs-extra')).default
+    fsMock.copy.mockResolvedValue(undefined)
+  })
+
+  it('workspace-claude 无标记时提示"追加 BMAD 配置段落（推荐）"', async () => {
+    const { createInterface } = await import('readline')
+    let capturedPrompt = ''
+    createInterface.mockReturnValue({
+      question: vi.fn((prompt, cb) => {
+        capturedPrompt = prompt
+        cb('1') // choose append
+      }),
+      close: vi.fn(),
+      on: vi.fn(),
+    })
+    fsMock.readFile.mockResolvedValue('# Existing file\n')
+
+    const templateContent = '<!-- bmad-workspace-config -->\n## Default\nmy-app\n<!-- /bmad-workspace-config -->'
+    await resolveConflicts(
+      WORKSPACE,
+      [{ path: 'CLAUDE.md', type: 'workspace-claude', content: templateContent, exists: true }],
+      {}
+    )
+
+    expect(capturedPrompt).toContain('追加 BMAD 配置段落（推荐）')
+  })
+
+  it('workflow 文件交互菜单包含"覆盖（先备份）（推荐）"', async () => {
+    const { createInterface } = await import('readline')
+    let capturedPrompt = ''
+    createInterface.mockReturnValue({
+      question: vi.fn((prompt, cb) => {
+        capturedPrompt = prompt
+        cb('2') // choose skip
+      }),
+      close: vi.fn(),
+      on: vi.fn(),
+    })
+
+    await resolveConflicts(
+      WORKSPACE,
+      [{ path: 'my-project/workflow/dev.md', type: 'workflow', content: '# Workflow', exists: true }],
+      {}
+    )
+
+    expect(capturedPrompt).toContain('覆盖（先备份）（推荐）')
   })
 })

@@ -323,7 +323,7 @@ describe('updateInitConfigs', () => {
         currentVersion: '0.2.0',
       })
 
-      expect(result).toEqual({ skipped: true, filesUpdated: 0, filesSkipped: 0 })
+      expect(result).toEqual({ skipped: true, filesUpdated: 0, filesSkipped: 0, fileResults: [] })
     })
 
     it('不读取 .bmad-init.json 文件', async () => {
@@ -349,7 +349,7 @@ describe('updateInitConfigs', () => {
         currentVersion: '0.2.0',
       })
 
-      expect(result).toEqual({ skipped: true, filesUpdated: 0, filesSkipped: 0 })
+      expect(result).toEqual({ skipped: true, filesUpdated: 0, filesSkipped: 0, fileResults: [] })
     })
   })
 
@@ -676,7 +676,7 @@ describe('updateInitConfigs', () => {
         currentVersion: '0.2.0',
       })
 
-      expect(result).toEqual({ skipped: true, filesUpdated: 0, filesSkipped: 0 })
+      expect(result).toEqual({ skipped: true, filesUpdated: 0, filesSkipped: 0, fileResults: [] })
     })
   })
 
@@ -759,6 +759,151 @@ describe('updateInitConfigs', () => {
       await expect(
         updateInitConfigs({ yes: true, cwd: '/workspace', currentVersion: '0.2.0' })
       ).rejects.toMatchObject({ bmadCode: 'E001' })
+    })
+  })
+
+  // ─── Story 13-1: 逐文件摘要输出（FR72）──────────────────────────────
+
+  describe('逐文件摘要 fileResults（Story 13-1, FR72）', () => {
+    it('标记管理文件有变更返回 section-replaced', async () => {
+      fsMock.pathExists.mockImplementation((p) => {
+        if (String(p).includes('.bmad-init.json')) return Promise.resolve(true)
+        return Promise.resolve(true)
+      })
+      fsMock.readFile.mockImplementation((p) => {
+        if (String(p).includes('.bmad-init.json')) {
+          return Promise.resolve(JSON.stringify(MOCK_MANIFEST))
+        }
+        return Promise.resolve('# Claude\n\n<!-- bmad-workspace-config -->\nold\n<!-- /bmad-workspace-config -->')
+      })
+      sectionManagerMock.extractBmadSection.mockReturnValue('<!-- bmad-workspace-config -->\nnew\n<!-- /bmad-workspace-config -->')
+      sectionManagerMock.replaceBmadSection.mockReturnValue('# Claude\n\n<!-- bmad-workspace-config -->\nnew\n<!-- /bmad-workspace-config -->')
+
+      const result = await updateInitConfigs({
+        yes: true,
+        cwd: '/workspace',
+        currentVersion: '0.2.0',
+      })
+
+      expect(result.fileResults).toBeDefined()
+      expect(result.fileResults.length).toBe(2)
+      expect(result.fileResults[0]).toEqual({ path: 'CLAUDE.md', action: 'section-replaced' })
+      expect(result.fileResults[1]).toEqual({ path: 'my-project/CLAUDE.md', action: 'section-replaced' })
+    })
+
+    it('标记管理文件无差异返回 skipped (no change)', async () => {
+      const content = '# Claude\n\n<!-- bmad-workspace-config -->\nmanaged\n<!-- /bmad-workspace-config -->'
+      fsMock.pathExists.mockImplementation((p) => {
+        if (String(p).includes('.bmad-init.json')) return Promise.resolve(true)
+        return Promise.resolve(true)
+      })
+      fsMock.readFile.mockImplementation((p) => {
+        if (String(p).includes('.bmad-init.json')) {
+          return Promise.resolve(JSON.stringify(MOCK_MANIFEST))
+        }
+        return Promise.resolve(content)
+      })
+      sectionManagerMock.replaceBmadSection.mockReturnValue(content)
+      sectionManagerMock.extractBmadSection.mockReturnValue('<!-- bmad-workspace-config -->\nmanaged\n<!-- /bmad-workspace-config -->')
+
+      const result = await updateInitConfigs({
+        yes: true,
+        cwd: '/workspace',
+        currentVersion: '0.2.0',
+      })
+
+      expect(result.fileResults[0].action).toBe('skipped (no change)')
+      expect(result.fileResults[1].action).toBe('skipped (no change)')
+    })
+
+    it('workflow 文件 --yes 覆盖返回 confirmed-overwrite', async () => {
+      fsMock.pathExists.mockImplementation((p) => {
+        if (String(p).includes('.bmad-init.json')) return Promise.resolve(true)
+        return Promise.resolve(true)
+      })
+      fsMock.readFile.mockImplementation((p) => {
+        if (String(p).includes('.bmad-init.json')) {
+          return Promise.resolve(JSON.stringify(MOCK_MANIFEST_WITH_WORKFLOW))
+        }
+        if (String(p).includes('workflow')) {
+          return Promise.resolve('old workflow content')
+        }
+        return Promise.resolve('# Claude\n\n<!-- bmad-workspace-config -->\nold\n<!-- /bmad-workspace-config -->')
+      })
+      generateFileContentMock.mockResolvedValue('new content')
+      sectionManagerMock.extractBmadSection.mockReturnValue('<!-- bmad-workspace-config -->\nnew\n<!-- /bmad-workspace-config -->')
+      sectionManagerMock.replaceBmadSection.mockReturnValue('# Claude\n\n<!-- bmad-workspace-config -->\nnew\n<!-- /bmad-workspace-config -->')
+
+      const result = await updateInitConfigs({
+        yes: true,
+        cwd: '/workspace',
+        currentVersion: '0.2.0',
+      })
+
+      const workflowResult = result.fileResults.find((f) => f.path === 'my-project/workflow/dev.md')
+      expect(workflowResult.action).toBe('confirmed-overwrite')
+    })
+
+    it('workflow 文件用户拒绝返回 skipped (user declined)', async () => {
+      const { createInterface } = await import('readline')
+      createInterface.mockReturnValue({
+        question: vi.fn((prompt, cb) => cb('n')),
+        close: vi.fn(),
+        on: vi.fn().mockReturnThis(),
+      })
+
+      fsMock.pathExists.mockImplementation((p) => {
+        if (String(p).includes('.bmad-init.json')) return Promise.resolve(true)
+        return Promise.resolve(true)
+      })
+      fsMock.readFile.mockImplementation((p) => {
+        if (String(p).includes('.bmad-init.json')) {
+          return Promise.resolve(JSON.stringify(MOCK_MANIFEST_WITH_WORKFLOW))
+        }
+        if (String(p).includes('workflow')) {
+          return Promise.resolve('old workflow content')
+        }
+        return Promise.resolve('# Claude\n\n<!-- bmad-workspace-config -->\nold\n<!-- /bmad-workspace-config -->')
+      })
+      generateFileContentMock.mockResolvedValue('new workflow content')
+      sectionManagerMock.extractBmadSection.mockReturnValue('<!-- bmad-workspace-config -->\nold\n<!-- /bmad-workspace-config -->')
+      sectionManagerMock.replaceBmadSection.mockImplementation((content) => content)
+
+      const result = await updateInitConfigs({
+        yes: false,
+        cwd: '/workspace',
+        currentVersion: '0.2.0',
+      })
+
+      const workflowResult = result.fileResults.find((f) => f.path === 'my-project/workflow/dev.md')
+      expect(workflowResult.action).toBe('skipped (user declined)')
+    })
+
+    it('update 成功输出包含逐文件摘要', async () => {
+      // Use older templateVersion so version gate doesn't skip init config update
+      const olderManifest = { ...MOCK_MANIFEST, templateVersion: '0.0.1' }
+      fsMock.pathExists.mockImplementation((p) => {
+        if (String(p).includes('.bmad-init.json')) return Promise.resolve(true)
+        if (String(p).includes('CLAUDE.md')) return Promise.resolve(true)
+        return Promise.resolve(false)
+      })
+      fsMock.readFile.mockImplementation((p) => {
+        if (String(p).includes('package.json')) {
+          return Promise.resolve(JSON.stringify(MOCK_PKG))
+        }
+        if (String(p).includes('.bmad-init.json')) {
+          return Promise.resolve(JSON.stringify(olderManifest))
+        }
+        return Promise.resolve('# Claude\n\n<!-- bmad-workspace-config -->\nold\n<!-- /bmad-workspace-config -->')
+      })
+      sectionManagerMock.extractBmadSection.mockReturnValue('<!-- bmad-workspace-config -->\nnew\n<!-- /bmad-workspace-config -->')
+      sectionManagerMock.replaceBmadSection.mockReturnValue('# Claude\n\n<!-- bmad-workspace-config -->\nnew\n<!-- /bmad-workspace-config -->')
+
+      await update({ yes: true, cwd: '/workspace' })
+
+      const { printSuccess } = await import('../lib/output.js')
+      const successMsg = printSuccess.mock.calls[0][0]
+      expect(successMsg).toContain('CLAUDE.md: section-replaced')
     })
   })
 })
