@@ -61,6 +61,7 @@ program
   .option('--platform <name>', '指定目标平台（happycapy/cursor/claude-code）')
   .option('--agent-id <id>', 'Agent 标识符', 'bmad-expert')
   .option('--yes', '自动确认所有 init 配置文件更新')
+  .option('--force', '跳过版本门控，强制更新 init 配置文件（FR74）')
   .option('--json', '输出结构化 JSON 结果（AI 调用专用）')
   .action(async (options) => {
     if (options.json) setJsonMode(true)
@@ -68,6 +69,7 @@ program
       platform: options.platform ?? null,
       agentId: options.agentId,
       yes: options.yes ?? false,
+      force: options.force ?? false,
     })
     if (options.json) {
       printJSON({ success: true, ...result })

@@ -38,7 +38,7 @@
   "devDependencies": {
     "eslint": "9.24.0",
     "prettier": "3.5.3",
-    "vitest": "^4.1.1"
+    "vitest": "^4.1.4"
   },
   "publishConfig": {
     "registry": "https://registry.npmjs.org/",
