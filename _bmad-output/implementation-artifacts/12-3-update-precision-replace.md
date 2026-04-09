@@ -1,6 +1,6 @@
 # Story 12.3: update 精准段落替换与框架文件确认
 
-Status: review
+Status: done
 
 ## Story
 
