@@ -129,7 +129,7 @@ development_status:
   epic-12-retrospective: optional
 
   # Epic 13：交互确认与 CLI 增强（Phase 4）
-  epic-13: backlog
+  epic-13: in-progress
   13-1-yes-output-interactive-menu: backlog
-  13-2-status-init-expansion: backlog
+  13-2-status-init-expansion: done
   epic-13-retrospective: optional
