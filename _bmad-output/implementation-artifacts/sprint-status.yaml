@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-03-23T00:00:00Z
-last_updated: 2026-04-09T00:00:00Z
+last_updated: 2026-04-09T00:00:00Z  # Story 13-2 ready-for-dev
 project: bmad-expert
 project_key: NOKEY
 tracking_system: file-system
@@ -129,7 +129,7 @@ development_status:
   epic-12-retrospective: optional
 
   # Epic 13：交互确认与 CLI 增强（Phase 4）
-  epic-13: backlog
+  epic-13: in-progress
   13-1-yes-output-interactive-menu: backlog
-  13-2-status-init-expansion: backlog
+  13-2-status-init-expansion: done
   epic-13-retrospective: optional

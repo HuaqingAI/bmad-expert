@@ -6,6 +6,7 @@ vi.mock('fs-extra', () => ({
   default: {
     readFile: vi.fn(),
     pathExists: vi.fn(),
+    readJSON: vi.fn(),
   },
 }))
 
@@ -46,6 +47,9 @@ describe('checkStatus', () => {
       }
       return Promise.resolve('')
     })
+
+    // 默认：.bmad-init.json 不存在（未执行过 init）
+    fsMock.readJSON.mockRejectedValue(new Error('ENOENT'))
   })
 
   // ─── 已安装状态（healthy） ──────────────────────────────────────────
@@ -193,8 +197,10 @@ describe('checkStatus', () => {
   describe('损坏状态（corrupted）', () => {
     beforeEach(() => {
       // installPath 存在，但第 2、4 个文件缺失
+      // 注：第 2 个调用是 .bmad-init.json（init 状态检测，Story 13.2）
       fsMock.pathExists
         .mockResolvedValueOnce(true)   // installPath 存在
+        .mockResolvedValueOnce(false)  // .bmad-init.json 不存在（init 状态检测）
         .mockResolvedValueOnce(true)   // SOUL.md 存在
         .mockResolvedValueOnce(false)  // IDENTITY.md 缺失
         .mockResolvedValueOnce(true)   // AGENTS.md 存在
@@ -334,11 +340,12 @@ describe('checkStatus', () => {
 
     it('corrupted 状态：输出结构含全部必要字段', async () => {
       fsMock.pathExists
-        .mockResolvedValueOnce(true)
-        .mockResolvedValueOnce(true)
-        .mockResolvedValueOnce(false)
-        .mockResolvedValueOnce(true)
-        .mockResolvedValueOnce(false)
+        .mockResolvedValueOnce(true)   // installPath
+        .mockResolvedValueOnce(false)  // .bmad-init.json
+        .mockResolvedValueOnce(true)   // SOUL.md
+        .mockResolvedValueOnce(false)  // IDENTITY.md
+        .mockResolvedValueOnce(true)   // AGENTS.md
+        .mockResolvedValueOnce(false)  // BOOTSTRAP.md
       const result = await checkStatus()
       expect(result).toMatchObject({
         success: false,
@@ -356,6 +363,266 @@ describe('checkStatus', () => {
       const result = await checkStatus()
       const roundTripped = JSON.parse(JSON.stringify(result))
       expect(roundTripped).toEqual(result)
+    })
+  })
+
+  // ─── init 状态检测（FR73 — Story 13.2） ──────────────────────────────
+
+  const MOCK_INIT_MANIFEST = {
+    version: '1.0.0',
+    createdAt: '2026-04-08T10:00:00Z',
+    templateVersion: '1.0.0',
+    defaultProject: 'my-project',
+    files: [
+      { path: 'CLAUDE.md', type: 'workspace-claude' },
+      { path: 'my-project/CLAUDE.md', type: 'project-claude' },
+      { path: 'my-project/workflow/story-dev-workflow-single-repo.md', type: 'workflow' },
+    ],
+  }
+
+  const WORKSPACE_CONTENT_WITH_MARKERS = `# My Workspace\n\n<!-- bmad-workspace-config -->\n## Default Project\nfoo\n<!-- /bmad-workspace-config -->\n\n## My Custom Stuff`
+  const PROJECT_CONTENT_WITH_MARKERS = `<!-- bmad-project-config -->\n## Workflow\nbar\n<!-- /bmad-project-config -->`
+  const CONTENT_WITHOUT_MARKERS = `# Just a normal file\nNo markers here.`
+
+  describe('init 状态检测（FR73）', () => {
+    describe('已初始化（所有文件完整）', () => {
+      beforeEach(() => {
+        // install healthy + init manifest exists + all init files exist
+        fsMock.pathExists.mockImplementation((p) => {
+          const s = String(p)
+          if (s.includes('.bmad-init.json')) return Promise.resolve(true)
+          return Promise.resolve(true) // installPath + all framework files + all init files
+        })
+        fsMock.readJSON.mockImplementation((p) => {
+          if (String(p).includes('.bmad-init.json')) return Promise.resolve(MOCK_INIT_MANIFEST)
+          return Promise.reject(new Error('ENOENT'))
+        })
+        fsMock.readFile.mockImplementation((p) => {
+          const s = String(p)
+          if (s.includes('package.json')) return Promise.resolve(JSON.stringify(MOCK_PKG))
+          if (s.endsWith('CLAUDE.md') && !s.includes('my-project')) return Promise.resolve(WORKSPACE_CONTENT_WITH_MARKERS)
+          if (s.includes('my-project') && s.endsWith('CLAUDE.md')) return Promise.resolve(PROJECT_CONTENT_WITH_MARKERS)
+          return Promise.resolve('')
+        })
+      })
+
+      it('返回对象含 init.initialized: true', async () => {
+        const result = await checkStatus()
+        expect(result.init.initialized).toBe(true)
+      })
+
+      it('返回 init.templateVersion', async () => {
+        const result = await checkStatus()
+        expect(result.init.templateVersion).toBe('1.0.0')
+      })
+
+      it('返回 init.files 数组，长度与清单一致', async () => {
+        const result = await checkStatus()
+        expect(result.init.files).toHaveLength(3)
+      })
+
+      it('workspace-claude 文件含 hasBmadSection: true', async () => {
+        const result = await checkStatus()
+        const wsFile = result.init.files.find((f) => f.type === 'workspace-claude')
+        expect(wsFile.exists).toBe(true)
+        expect(wsFile.hasBmadSection).toBe(true)
+      })
+
+      it('project-claude 文件含 hasBmadSection: true', async () => {
+        const result = await checkStatus()
+        const projFile = result.init.files.find((f) => f.type === 'project-claude')
+        expect(projFile.exists).toBe(true)
+        expect(projFile.hasBmadSection).toBe(true)
+      })
+
+      it('workflow 文件不含 hasBmadSection 字段', async () => {
+        const result = await checkStatus()
+        const wfFile = result.init.files.find((f) => f.type === 'workflow')
+        expect(wfFile.exists).toBe(true)
+        expect(wfFile).not.toHaveProperty('hasBmadSection')
+      })
+
+      it('printSuccess 含 "Init: ✓ 已初始化"', async () => {
+        const { printSuccess } = await import('../lib/output.js')
+        await checkStatus()
+        expect(printSuccess).toHaveBeenCalledWith(expect.stringContaining('Init: ✓ 已初始化'))
+      })
+
+      it('printSuccess 含配置文件完整数："3/3 完整"', async () => {
+        const { printSuccess } = await import('../lib/output.js')
+        await checkStatus()
+        expect(printSuccess).toHaveBeenCalledWith(expect.stringContaining('3/3 完整'))
+      })
+
+      it('printSuccess 含模板版本："模板版本: 1.0.0"', async () => {
+        const { printSuccess } = await import('../lib/output.js')
+        await checkStatus()
+        expect(printSuccess).toHaveBeenCalledWith(expect.stringContaining('模板版本: 1.0.0'))
+      })
+    })
+
+    describe('未初始化', () => {
+      beforeEach(() => {
+        // install healthy, no .bmad-init.json
+        fsMock.pathExists.mockImplementation((p) => {
+          if (String(p).includes('.bmad-init.json')) return Promise.resolve(false)
+          return Promise.resolve(true) // installPath + all framework files
+        })
+      })
+
+      it('返回对象含 init.initialized: false', async () => {
+        const result = await checkStatus()
+        expect(result.init.initialized).toBe(false)
+      })
+
+      it('init 对象不含 templateVersion', async () => {
+        const result = await checkStatus()
+        expect(result.init).not.toHaveProperty('templateVersion')
+      })
+
+      it('init 对象不含 files', async () => {
+        const result = await checkStatus()
+        expect(result.init).not.toHaveProperty('files')
+      })
+
+      it('printSuccess 含 "Init: ✗ 未初始化"', async () => {
+        const { printSuccess } = await import('../lib/output.js')
+        await checkStatus()
+        expect(printSuccess).toHaveBeenCalledWith(expect.stringContaining('Init: ✗ 未初始化'))
+      })
+    })
+
+    describe('已初始化（部分文件缺失）', () => {
+      beforeEach(() => {
+        fsMock.pathExists.mockImplementation((p) => {
+          const s = String(p)
+          if (s.includes('.bmad-init.json')) return Promise.resolve(true)
+          // workflow 文件不存在
+          if (s.includes('story-dev-workflow')) return Promise.resolve(false)
+          return Promise.resolve(true) // installPath + framework files + CLAUDE.md files
+        })
+        fsMock.readJSON.mockImplementation((p) => {
+          if (String(p).includes('.bmad-init.json')) return Promise.resolve(MOCK_INIT_MANIFEST)
+          return Promise.reject(new Error('ENOENT'))
+        })
+        fsMock.readFile.mockImplementation((p) => {
+          const s = String(p)
+          if (s.includes('package.json')) return Promise.resolve(JSON.stringify(MOCK_PKG))
+          if (s.endsWith('CLAUDE.md') && !s.includes('my-project')) return Promise.resolve(WORKSPACE_CONTENT_WITH_MARKERS)
+          if (s.includes('my-project') && s.endsWith('CLAUDE.md')) return Promise.resolve(PROJECT_CONTENT_WITH_MARKERS)
+          return Promise.resolve('')
+        })
+      })
+
+      it('返回 init.initialized: true', async () => {
+        const result = await checkStatus()
+        expect(result.init.initialized).toBe(true)
+      })
+
+      it('缺失文件的 exists 为 false', async () => {
+        const result = await checkStatus()
+        const wfFile = result.init.files.find((f) => f.type === 'workflow')
+        expect(wfFile.exists).toBe(false)
+      })
+
+      it('存在的文件 exists 为 true', async () => {
+        const result = await checkStatus()
+        const wsFile = result.init.files.find((f) => f.type === 'workspace-claude')
+        expect(wsFile.exists).toBe(true)
+      })
+
+      it('printSuccess 含缺失数信息', async () => {
+        const { printSuccess } = await import('../lib/output.js')
+        await checkStatus()
+        expect(printSuccess).toHaveBeenCalledWith(expect.stringContaining('2/3 完整'))
+        expect(printSuccess).toHaveBeenCalledWith(expect.stringContaining('1 个缺失'))
+      })
+    })
+
+    describe('标记对不完整时 hasBmadSection 为 false', () => {
+      beforeEach(() => {
+        fsMock.pathExists.mockResolvedValue(true)
+        fsMock.readJSON.mockImplementation((p) => {
+          if (String(p).includes('.bmad-init.json')) return Promise.resolve(MOCK_INIT_MANIFEST)
+          return Promise.reject(new Error('ENOENT'))
+        })
+        fsMock.readFile.mockImplementation((p) => {
+          const s = String(p)
+          if (s.includes('package.json')) return Promise.resolve(JSON.stringify(MOCK_PKG))
+          // workspace CLAUDE.md 无标记
+          if (s.endsWith('CLAUDE.md') && !s.includes('my-project')) return Promise.resolve(CONTENT_WITHOUT_MARKERS)
+          if (s.includes('my-project') && s.endsWith('CLAUDE.md')) return Promise.resolve(CONTENT_WITHOUT_MARKERS)
+          return Promise.resolve('')
+        })
+      })
+
+      it('workspace-claude 文件无标记时 hasBmadSection: false', async () => {
+        const result = await checkStatus()
+        const wsFile = result.init.files.find((f) => f.type === 'workspace-claude')
+        expect(wsFile.hasBmadSection).toBe(false)
+      })
+
+      it('project-claude 文件无标记时 hasBmadSection: false', async () => {
+        const result = await checkStatus()
+        const projFile = result.init.files.find((f) => f.type === 'project-claude')
+        expect(projFile.hasBmadSection).toBe(false)
+      })
+    })
+
+    describe('JSON 输出结构含 init 字段', () => {
+      it('healthy + 已初始化：init 字段完整', async () => {
+        fsMock.pathExists.mockResolvedValue(true)
+        fsMock.readJSON.mockImplementation((p) => {
+          if (String(p).includes('.bmad-init.json')) return Promise.resolve(MOCK_INIT_MANIFEST)
+          return Promise.reject(new Error('ENOENT'))
+        })
+        fsMock.readFile.mockImplementation((p) => {
+          const s = String(p)
+          if (s.includes('package.json')) return Promise.resolve(JSON.stringify(MOCK_PKG))
+          if (s.endsWith('CLAUDE.md')) return Promise.resolve(WORKSPACE_CONTENT_WITH_MARKERS)
+          return Promise.resolve('')
+        })
+
+        const result = await checkStatus()
+        expect(result.init).toMatchObject({
+          initialized: true,
+          templateVersion: '1.0.0',
+          files: expect.any(Array),
+        })
+        // JSON 往返无损
+        const roundTripped = JSON.parse(JSON.stringify(result))
+        expect(roundTripped).toEqual(result)
+      })
+
+      it('healthy + 未初始化：init 字段只含 initialized: false', async () => {
+        fsMock.pathExists.mockImplementation((p) => {
+          if (String(p).includes('.bmad-init.json')) return Promise.resolve(false)
+          return Promise.resolve(true)
+        })
+
+        const result = await checkStatus()
+        expect(result.init).toEqual({ initialized: false })
+      })
+
+      it('not_installed + 未初始化：init 字段存在且 initialized: false', async () => {
+        fsMock.pathExists.mockResolvedValue(false)
+
+        const result = await checkStatus()
+        expect(result.init).toEqual({ initialized: false })
+      })
+    })
+
+    describe('.bmad-init.json 损坏时降级为未初始化', () => {
+      beforeEach(() => {
+        fsMock.pathExists.mockResolvedValue(true)
+        // readJSON 抛出 JSON 解析错误
+        fsMock.readJSON.mockRejectedValue(new SyntaxError('Unexpected token'))
+      })
+
+      it('返回 init.initialized: false', async () => {
+        const result = await checkStatus()
+        expect(result.init.initialized).toBe(false)
+      })
     })
   })
 })
