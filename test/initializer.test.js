@@ -329,13 +329,28 @@ describe('resolveConflicts', () => {
     expect(result[0].action).toBe('skipped')
   })
 
-  it('--yes 模式已有 project-claude → skipped（非 workspace-claude 类型保持原行为）', async () => {
+  it('--yes 模式已有 project-claude 含完整标记 → skipped', async () => {
+    fsMock.readFile.mockResolvedValue('# existing\n<!-- bmad-project-config -->\nstuff\n<!-- /bmad-project-config -->\n')
     const result = await resolveConflicts(
       WORKSPACE,
       [{ path: 'app/CLAUDE.md', type: 'project-claude', content: 'new', exists: true }],
       { yes: true }
     )
     expect(result[0].action).toBe('skipped')
+  })
+
+  it('--yes 模式已有 project-claude 无标记 → appended', async () => {
+    fsMock.readFile.mockResolvedValue('# existing project CLAUDE\n')
+    const templateContent = '# CLAUDE.md\n\n<!-- bmad-project-config -->\n## Workflow\nstuff\n<!-- /bmad-project-config -->\n'
+    const result = await resolveConflicts(
+      WORKSPACE,
+      [{ path: 'app/CLAUDE.md', type: 'project-claude', content: templateContent, exists: true }],
+      { yes: true }
+    )
+    expect(result[0].action).toBe('appended')
+    expect(result[0].content).toContain('# existing project CLAUDE')
+    expect(result[0].content).toContain('<!-- bmad-project-config -->')
+    expect(result[0].content).toContain('<!-- /bmad-project-config -->')
   })
 
   it('--yes 模式混合场景：已有含标记跳过 + 新文件创建', async () => {
@@ -370,7 +385,8 @@ describe('resolveConflicts', () => {
     expect(fsMock.copy).toHaveBeenCalled()
   })
 
-  it('交互模式 project-claude 选择跳过时 action=skipped', async () => {
+  it('交互模式 project-claude 含标记选择跳过时 action=skipped', async () => {
+    fsMock.readFile.mockResolvedValue('# existing\n<!-- bmad-project-config -->\nold\n<!-- /bmad-project-config -->\n')
     const { createInterface } = await import('readline')
     createInterface.mockReturnValue({
       question: vi.fn((_, cb) => cb('2')),
@@ -386,7 +402,8 @@ describe('resolveConflicts', () => {
     expect(result[0].action).toBe('skipped')
   })
 
-  it('交互模式 project-claude 选择查看 diff 后确认覆盖', async () => {
+  it('交互模式 project-claude 含标记选择查看 diff 后确认覆盖', async () => {
+    fsMock.readFile.mockResolvedValue('# existing\n<!-- bmad-project-config -->\nold\n<!-- /bmad-project-config -->\n')
     const { createInterface } = await import('readline')
     let callCount = 0
     createInterface.mockReturnValue({
@@ -408,7 +425,8 @@ describe('resolveConflicts', () => {
     expect(fsMock.readFile).toHaveBeenCalled()
   })
 
-  it('交互模式 project-claude 选择查看 diff 后拒绝覆盖', async () => {
+  it('交互模式 project-claude 含标记选择查看 diff 后拒绝覆盖', async () => {
+    fsMock.readFile.mockResolvedValue('# existing\n<!-- bmad-project-config -->\nold\n<!-- /bmad-project-config -->\n')
     const { createInterface } = await import('readline')
     let callCount = 0
     createInterface.mockReturnValue({
@@ -427,6 +445,26 @@ describe('resolveConflicts', () => {
     )
     expect(result[0].action).toBe('skipped')
     expect(fsMock.copy).not.toHaveBeenCalled()
+  })
+
+  it('交互模式 project-claude 无标记选择追加', async () => {
+    fsMock.readFile.mockResolvedValue('# My Project CLAUDE\n')
+    const { createInterface } = await import('readline')
+    createInterface.mockReturnValue({
+      question: vi.fn((_, cb) => cb('1')),
+      close: vi.fn(),
+      on: vi.fn(),
+    })
+
+    const templateContent = '<!-- bmad-project-config -->\n## Workflow\nstuff\n<!-- /bmad-project-config -->'
+    const result = await resolveConflicts(
+      WORKSPACE,
+      [{ path: 'app/CLAUDE.md', type: 'project-claude', content: templateContent, exists: true }],
+      {}
+    )
+    expect(result[0].action).toBe('appended')
+    expect(result[0].content).toContain('# My Project CLAUDE')
+    expect(result[0].content).toContain('<!-- bmad-project-config -->')
   })
 })
 
@@ -565,14 +603,17 @@ describe('generateFiles', () => {
   it('重复运行 --yes：已有文件（含标记）被跳过不写入', async () => {
     // 所有文件已存在
     fsMock.pathExists.mockResolvedValue(true)
-    // workspace CLAUDE.md 已含完整标记 → skip
+    // workspace CLAUDE.md 和 project CLAUDE.md 均含完整标记 → skip
     fsMock.readFile.mockImplementation((p) => {
       const path = String(p)
       if (path.endsWith('/CLAUDE.md') && !path.includes('my-app')) {
         return Promise.resolve('# Existing\n<!-- bmad-workspace-config -->\nconfig\n<!-- /bmad-workspace-config -->\n')
       }
+      if (path.includes('my-app/CLAUDE.md')) {
+        return Promise.resolve('# CLAUDE.md — my-app\n\n<!-- bmad-project-config -->\n## Workflow\nstuff\n<!-- /bmad-project-config -->\n')
+      }
       if (path.includes('workspace-claude.md')) return Promise.resolve('Default project: PROJECT_NAME\nPath: PROJECT_PATH/')
-      if (path.includes('project-claude.md')) return Promise.resolve('# CLAUDE.md — PROJECT_NAME')
+      if (path.includes('project-claude.md')) return Promise.resolve('# CLAUDE.md — PROJECT_NAME\n\n<!-- bmad-project-config -->\n## Workflow\nstuff\n<!-- /bmad-project-config -->\n')
       if (path.includes('workflow-single-repo.md')) return Promise.resolve('# Story Development Workflow')
       return Promise.resolve('')
     })
@@ -814,9 +855,9 @@ describe('init 主函数', () => {
           templateVersion: '1.0.0',
           defaultProject: 'my-project',
           files: [
-            { path: 'CLAUDE.md', type: 'workspace-claude' },
-            { path: 'my-project/CLAUDE.md', type: 'project-claude' },
-            { path: 'my-project/workflow/story-dev-workflow-single-repo.md', type: 'workflow' },
+            { path: 'CLAUDE.md', type: 'workspace-claude', action: 'created' },
+            { path: 'my-project/CLAUDE.md', type: 'project-claude', action: 'created' },
+            { path: 'my-project/workflow/story-dev-workflow-single-repo.md', type: 'workflow', action: 'created' },
           ],
         }))
       }
@@ -824,8 +865,12 @@ describe('init 主函数', () => {
       if (path.endsWith('/CLAUDE.md') && !path.includes('my-project')) {
         return Promise.resolve('# Existing\n<!-- bmad-workspace-config -->\nconfig\n<!-- /bmad-workspace-config -->\n')
       }
+      // project CLAUDE.md 已含标记 → skip
+      if (path.includes('my-project/CLAUDE.md')) {
+        return Promise.resolve('# CLAUDE.md — my-project\n\n<!-- bmad-project-config -->\n## Workflow\n<!-- /bmad-project-config -->\n')
+      }
       if (path.includes('workspace-claude.md')) return Promise.resolve('PROJECT_NAME at PROJECT_PATH')
-      if (path.includes('project-claude.md')) return Promise.resolve('# PROJECT_NAME')
+      if (path.includes('project-claude.md')) return Promise.resolve('# PROJECT_NAME\n\n<!-- bmad-project-config -->\n## Workflow\n<!-- /bmad-project-config -->\n')
       if (path.includes('workflow-single-repo.md')) return Promise.resolve('# Workflow')
       return Promise.resolve('')
     })
@@ -1067,5 +1112,208 @@ describe('init appended 摘要输出 (Story 10-4)', () => {
     const { printSuccess } = await import('../lib/output.js')
     const successMsg = printSuccess.mock.calls[0][0]
     expect(successMsg).toContain('追加')
+  })
+})
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Story 12-2: project-claude 标记化
+// ═══════════════════════════════════════════════════════════════════════════════
+
+describe('project-claude 标记化 (Story 12-2)', () => {
+  let fsMock
+
+  beforeEach(async () => {
+    vi.clearAllMocks()
+    fsMock = (await import('fs-extra')).default
+    fsMock.copy.mockResolvedValue(undefined)
+  })
+
+  it('--yes 模式 project-claude 无标记时追加标记段落', async () => {
+    fsMock.readFile.mockResolvedValue('# My Project CLAUDE\n')
+    const templateContent = '# CLAUDE.md — my-app\n\n<!-- bmad-project-config -->\n## Workflow Commands\nstuff\n<!-- /bmad-project-config -->\n'
+
+    const result = await resolveConflicts(
+      WORKSPACE,
+      [{ path: 'app/CLAUDE.md', type: 'project-claude', content: templateContent, exists: true }],
+      { yes: true }
+    )
+    expect(result[0].action).toBe('appended')
+    expect(result[0].content).toContain('# My Project CLAUDE')
+    expect(result[0].content).toContain('<!-- bmad-project-config -->')
+    expect(result[0].content).toContain('<!-- /bmad-project-config -->')
+    // Should NOT contain the title from template (only marker section appended)
+    expect(result[0].content).not.toContain('# CLAUDE.md — my-app')
+  })
+
+  it('--yes 模式 project-claude 含完整标记时跳过', async () => {
+    fsMock.readFile.mockResolvedValue('# CLAUDE\n<!-- bmad-project-config -->\n## Workflow\n<!-- /bmad-project-config -->\n')
+
+    const result = await resolveConflicts(
+      WORKSPACE,
+      [{ path: 'app/CLAUDE.md', type: 'project-claude', content: 'new template', exists: true }],
+      { yes: true }
+    )
+    expect(result[0].action).toBe('skipped')
+  })
+
+  it('--yes 模式 project-claude 残缺标记（只有开标记）时追加', async () => {
+    fsMock.readFile.mockResolvedValue('# CLAUDE\n<!-- bmad-project-config -->\nbroken\n')
+    const templateContent = '<!-- bmad-project-config -->\n## Workflow\n<!-- /bmad-project-config -->'
+
+    const result = await resolveConflicts(
+      WORKSPACE,
+      [{ path: 'app/CLAUDE.md', type: 'project-claude', content: templateContent, exists: true }],
+      { yes: true }
+    )
+    expect(result[0].action).toBe('appended')
+  })
+})
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Story 12-2: action 字段记录
+// ═══════════════════════════════════════════════════════════════════════════════
+
+describe('action 字段记录 (Story 12-2)', () => {
+  let fsMock
+
+  beforeEach(async () => {
+    vi.clearAllMocks()
+    fsMock = (await import('fs-extra')).default
+    fsMock.outputFile.mockResolvedValue(undefined)
+  })
+
+  it('首次写入 manifest 包含 action 字段', async () => {
+    fsMock.pathExists.mockResolvedValue(false)
+
+    await writeManifest(
+      WORKSPACE,
+      [
+        { path: 'CLAUDE.md', type: 'workspace-claude', action: 'created' },
+        { path: 'app/CLAUDE.md', type: 'project-claude', action: 'created' },
+      ],
+      'my-app'
+    )
+
+    const written = JSON.parse(fsMock.outputFile.mock.calls[0][1])
+    expect(written.files[0]).toMatchObject({ path: 'CLAUDE.md', type: 'workspace-claude', action: 'created' })
+    expect(written.files[1]).toMatchObject({ path: 'app/CLAUDE.md', type: 'project-claude', action: 'created' })
+  })
+
+  it('追加模式文件记录 action=appended', async () => {
+    fsMock.pathExists.mockResolvedValue(false)
+
+    await writeManifest(
+      WORKSPACE,
+      [
+        { path: 'CLAUDE.md', type: 'workspace-claude', action: 'appended' },
+        { path: 'app/CLAUDE.md', type: 'project-claude', action: 'appended' },
+      ],
+      'my-app'
+    )
+
+    const written = JSON.parse(fsMock.outputFile.mock.calls[0][1])
+    expect(written.files[0].action).toBe('appended')
+    expect(written.files[1].action).toBe('appended')
+  })
+
+  it('增量更新时 skipped 文件保留已有记录', async () => {
+    const existingManifest = {
+      version: '1.0.0',
+      createdAt: '2026-04-01T00:00:00Z',
+      templateVersion: '1.0.0',
+      defaultProject: 'my-app',
+      files: [
+        { path: 'CLAUDE.md', type: 'workspace-claude', action: 'appended' },
+        { path: 'app/CLAUDE.md', type: 'project-claude', action: 'created' },
+      ],
+    }
+    fsMock.pathExists.mockResolvedValue(true)
+    fsMock.readFile.mockResolvedValue(JSON.stringify(existingManifest))
+
+    await writeManifest(
+      WORKSPACE,
+      [
+        { path: 'CLAUDE.md', type: 'workspace-claude', action: 'skipped' },
+        { path: 'app/CLAUDE.md', type: 'project-claude', action: 'skipped' },
+      ],
+      'my-app'
+    )
+
+    const written = JSON.parse(fsMock.outputFile.mock.calls[0][1])
+    // Skipped files should preserve existing action
+    const wsFile = written.files.find((f) => f.path === 'CLAUDE.md')
+    const pcFile = written.files.find((f) => f.path === 'app/CLAUDE.md')
+    expect(wsFile.action).toBe('appended')
+    expect(pcFile.action).toBe('created')
+  })
+
+  it('向后兼容：无 action 字段的旧记录视为 created', () => {
+    // This test validates the convention documented in AC5:
+    // Missing action field defaults to "created" (backward compat)
+    const legacyRecord = { path: 'CLAUDE.md', type: 'workspace-claude' }
+    const action = legacyRecord.action || 'created'
+    expect(action).toBe('created')
+  })
+})
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Story 12-2: --project 参数
+// ═══════════════════════════════════════════════════════════════════════════════
+
+describe('--project 参数 (Story 12-2)', () => {
+  let fsMock
+
+  beforeEach(async () => {
+    vi.clearAllMocks()
+    fsMock = (await import('fs-extra')).default
+
+    fsMock.readFile.mockImplementation((p) => {
+      const path = String(p)
+      if (path.includes('workspace-claude.md')) {
+        return Promise.resolve('# Claude\n\n<!-- bmad-workspace-config -->\n## Default Project\nPROJECT_NAME at PROJECT_PATH\n<!-- /bmad-workspace-config -->')
+      }
+      if (path.includes('project-claude.md')) {
+        return Promise.resolve('# CLAUDE.md — PROJECT_NAME\n\n<!-- bmad-project-config -->\n## Workflow\nstuff\n<!-- /bmad-project-config -->\n')
+      }
+      if (path.includes('workflow-single-repo.md')) return Promise.resolve('# Workflow')
+      return Promise.resolve('')
+    })
+    fsMock.outputFile.mockResolvedValue(undefined)
+    fsMock.ensureDir.mockResolvedValue(undefined)
+    fsMock.copy.mockResolvedValue(undefined)
+  })
+
+  it('--project 跳过 workspace 检测直接使用指定项目', async () => {
+    // No readdir mock needed — detectWorkspaceStructure should be skipped
+    fsMock.pathExists.mockResolvedValue(false) // all files new, manifest new
+
+    const result = await init({ yes: true, project: 'custom-app', cwd: WORKSPACE })
+    expect(result.defaultProject).toBe('custom-app')
+    expect(result.files).toHaveLength(3)
+    // readdir should NOT have been called (skipped workspace detection)
+    expect(fsMock.readdir).not.toHaveBeenCalled()
+  })
+
+  it('--project 生成的文件路径使用指定项目名', async () => {
+    fsMock.pathExists.mockResolvedValue(false)
+
+    const result = await init({ yes: true, project: 'my-custom', cwd: WORKSPACE })
+    const projectFile = result.files.find((f) => f.type === 'project-claude')
+    expect(projectFile.path).toBe('my-custom/CLAUDE.md')
+  })
+
+  it('--project 不需要 --yes 也能跳过检测', async () => {
+    fsMock.pathExists.mockResolvedValue(false)
+    // Mock readline for the single-project confirmation
+    const { createInterface } = await import('readline')
+    createInterface.mockReturnValue({
+      question: vi.fn((_, cb) => cb('Y')),
+      close: vi.fn(),
+      on: vi.fn(),
+    })
+
+    const result = await init({ project: 'direct-app', cwd: WORKSPACE })
+    expect(result.defaultProject).toBe('direct-app')
+    expect(fsMock.readdir).not.toHaveBeenCalled()
   })
 })

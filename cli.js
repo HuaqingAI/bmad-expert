@@ -103,10 +103,11 @@ program
   .command('init')
   .description('初始化工作环境：生成 CLAUDE.md 和 workflow 配置文件（Phase 3）')
   .option('--yes', '非交互模式，使用默认值')
+  .option('--project <name>', '指定目标项目（覆盖交互式选择）')
   .option('--json', '输出结构化 JSON 结果（AI 调用专用）')
   .action(async (options) => {
     if (options.json) setJsonMode(true)
-    const result = await init({ yes: options.yes ?? false })
+    const result = await init({ yes: options.yes ?? false, project: options.project ?? null })
     if (options.json) {
       printJSON({ success: true, ...result })
     }
