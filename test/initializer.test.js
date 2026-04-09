@@ -8,9 +8,9 @@ import {
   resolveConflicts,
   backupFile,
   generateDiff,
-  extractBmadSection,
   init,
 } from '../lib/initializer.js'
+import { extractBmadSection } from '../lib/section-manager.js'
 
 // mock fs-extra — vi.mock 被 vitest 自动 hoist 到文件顶部执行
 vi.mock('fs-extra', () => ({
@@ -874,13 +874,13 @@ describe('init 主函数', () => {
 describe('extractBmadSection', () => {
   it('从含标记的模板内容中提取 bmad 段落', () => {
     const template = '# Claude\n\n<!-- bmad-workspace-config -->\n## Default Project\nmy-app\n<!-- /bmad-workspace-config -->'
-    const section = extractBmadSection(template)
+    const section = extractBmadSection(template, 'bmad-workspace-config')
     expect(section).toBe('<!-- bmad-workspace-config -->\n## Default Project\nmy-app\n<!-- /bmad-workspace-config -->')
   })
 
   it('无标记时 fallback 包裹 ## Default Project 起始的内容', () => {
     const template = '# Claude\n\n## Default Project\nmy-app\n## Repo Ops\nstuff'
-    const section = extractBmadSection(template)
+    const section = extractBmadSection(template, 'bmad-workspace-config')
     expect(section).toContain('<!-- bmad-workspace-config -->')
     expect(section).toContain('<!-- /bmad-workspace-config -->')
     expect(section).toContain('## Default Project')
@@ -889,7 +889,7 @@ describe('extractBmadSection', () => {
 
   it('无标记且无 ## Default Project 时包裹全部内容', () => {
     const template = 'some random content'
-    const section = extractBmadSection(template)
+    const section = extractBmadSection(template, 'bmad-workspace-config')
     expect(section).toBe('<!-- bmad-workspace-config -->\nsome random content\n<!-- /bmad-workspace-config -->')
   })
 })
