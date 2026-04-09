@@ -16,6 +16,7 @@ vi.mock('fs-extra', () => ({
     pathExists: vi.fn(),
     remove: vi.fn().mockResolvedValue(undefined),
     copy: vi.fn().mockResolvedValue(undefined),
+    writeFile: vi.fn().mockResolvedValue(undefined),
   },
 }))
 
@@ -31,6 +32,24 @@ vi.mock('../lib/platform.js', () => ({
 vi.mock('../lib/output.js', () => ({
   printProgress: vi.fn(),
   printSuccess: vi.fn(),
+}))
+
+// mock section-manager.js
+vi.mock('../lib/section-manager.js', () => ({
+  removeBmadSection: vi.fn((content, sectionId) => {
+    // Simulate removing a marker section from content
+    const open = `<!-- ${sectionId} -->`
+    const close = `<!-- /${sectionId} -->`
+    const openIdx = content.indexOf(open)
+    const closeIdx = content.indexOf(close)
+    if (openIdx === -1 || closeIdx === -1) return content
+    const before = content.substring(0, openIdx).replace(/\n+$/, '')
+    const after = content.substring(closeIdx + close.length).replace(/^\n+/, '')
+    if (!before && !after) return ''
+    if (!before) return after
+    if (!after) return before + '\n'
+    return before + '\n\n' + after
+  }),
 }))
 
 const CWD = '/workspace'
@@ -55,6 +74,29 @@ const MOCK_MANIFEST = {
     { path: 'CLAUDE.md', type: 'workspace-claude' },
     { path: 'my-project/CLAUDE.md', type: 'project-claude' },
     { path: 'my-project/workflow/story-dev-workflow-single-repo.md', type: 'workflow' },
+  ],
+}
+
+const MOCK_MANIFEST_WITH_APPENDED = {
+  version: '1.0.0',
+  createdAt: '2026-04-08T10:00:00Z',
+  templateVersion: '1.0.0',
+  defaultProject: 'my-project',
+  files: [
+    { path: 'CLAUDE.md', type: 'workspace-claude', action: 'appended' },
+    { path: 'my-project/CLAUDE.md', type: 'project-claude', action: 'appended' },
+    { path: 'my-project/workflow/story-dev-workflow-single-repo.md', type: 'workflow', action: 'created' },
+  ],
+}
+
+const MOCK_MANIFEST_LEGACY = {
+  version: '1.0.0',
+  createdAt: '2026-04-08T10:00:00Z',
+  templateVersion: '1.0.0',
+  defaultProject: 'my-project',
+  files: [
+    { path: 'CLAUDE.md', type: 'workspace-claude' },
+    { path: 'my-project/CLAUDE.md', type: 'project-claude' },
   ],
 }
 
@@ -157,6 +199,58 @@ describe('collectUninstallTargets', () => {
     expect(plan.toDelete).toHaveLength(1)
   })
 
+  it('routes action=appended entries to toRemoveSection with correct sectionId', async () => {
+    fsMock.pathExists.mockImplementation(async (p) => {
+      if (p.endsWith('.bmad-init.json')) return true
+      return false
+    })
+    fsMock.readJson.mockResolvedValue(MOCK_MANIFEST_WITH_APPENDED)
+
+    const plan = await collectUninstallTargets(CWD, INSTALL_PATH, FRAMEWORK_FILES, USER_DATA_PATHS)
+
+    expect(plan.toRemoveSection).toHaveLength(2)
+    expect(plan.toRemoveSection[0].sectionId).toBe('bmad-workspace-config')
+    expect(plan.toRemoveSection[0].path).toBe('CLAUDE.md')
+    expect(plan.toRemoveSection[1].sectionId).toBe('bmad-project-config')
+    expect(plan.toRemoveSection[1].path).toBe('my-project/CLAUDE.md')
+    // workflow file with action=created goes to toDelete
+    expect(plan.toDelete).toHaveLength(1)
+  })
+
+  it('routes action=created entries to toDelete', async () => {
+    const manifest = {
+      ...MOCK_MANIFEST,
+      files: [
+        { path: 'CLAUDE.md', type: 'workspace-claude', action: 'created' },
+        { path: 'my-project/CLAUDE.md', type: 'project-claude', action: 'created' },
+      ],
+    }
+    fsMock.pathExists.mockImplementation(async (p) => {
+      if (p.endsWith('.bmad-init.json')) return true
+      return false
+    })
+    fsMock.readJson.mockResolvedValue(manifest)
+
+    const plan = await collectUninstallTargets(CWD, INSTALL_PATH, FRAMEWORK_FILES, USER_DATA_PATHS)
+
+    expect(plan.toDelete).toHaveLength(2)
+    expect(plan.toRemoveSection).toHaveLength(0)
+  })
+
+  it('treats missing action field as created (backward compat)', async () => {
+    fsMock.pathExists.mockImplementation(async (p) => {
+      if (p.endsWith('.bmad-init.json')) return true
+      return false
+    })
+    fsMock.readJson.mockResolvedValue(MOCK_MANIFEST_LEGACY)
+
+    const plan = await collectUninstallTargets(CWD, INSTALL_PATH, FRAMEWORK_FILES, USER_DATA_PATHS)
+
+    // No action field → treated as created → goes to toDelete
+    expect(plan.toDelete).toHaveLength(2)
+    expect(plan.toRemoveSection).toHaveLength(0)
+  })
+
   it('reads manifest only once (cached)', async () => {
     fsMock.pathExists.mockImplementation(async (p) => {
       if (p.endsWith('.bmad-init.json')) return true
@@ -191,6 +285,23 @@ describe('displayCleanupPlan', () => {
     expect(output).toContain('将删除')
     expect(output).toContain('将保留')
     expect(output).toContain('MEMORY.md')
+  })
+
+  it('shows "移除 bmad 段落" for toRemoveSection items', async () => {
+    const { printProgress } = await import('../lib/output.js')
+    const plan = {
+      toDelete: ['/workspace/_bmad'],
+      toRemoveSection: [
+        { path: 'CLAUDE.md', sectionId: 'bmad-workspace-config', absolutePath: '/workspace/CLAUDE.md' },
+      ],
+      toPreserve: [],
+    }
+
+    displayCleanupPlan(plan)
+
+    const output = printProgress.mock.calls[0][0]
+    expect(output).toContain('将移除 bmad 段落')
+    expect(output).toContain('/workspace/CLAUDE.md')
   })
 })
 
@@ -279,6 +390,47 @@ describe('executeUninstall', () => {
     const removeCalls = fsMock.remove.mock.calls.map(([p]) => p)
     const manifestIndex = removeCalls.findIndex((p) => p.endsWith('.bmad-init.json'))
     expect(manifestIndex).toBe(removeCalls.length - 1)
+  })
+
+  it('precision-removes marked section from appended file and writes back', async () => {
+    const fileContent = '# My Config\n\n<!-- bmad-workspace-config -->\nbmad stuff\n<!-- /bmad-workspace-config -->\n'
+    fsMock.readFile.mockResolvedValue(fileContent)
+
+    const plan = {
+      toDelete: [],
+      toRemoveSection: [
+        { path: 'CLAUDE.md', sectionId: 'bmad-workspace-config', absolutePath: '/workspace/CLAUDE.md' },
+      ],
+      hasManifest: false,
+    }
+
+    const count = await executeUninstall(plan, '/workspace')
+
+    expect(count).toBe(1)
+    expect(fsMock.writeFile).toHaveBeenCalledTimes(1)
+    const [writePath, writtenContent] = fsMock.writeFile.mock.calls[0]
+    expect(writePath).toBe('/workspace/CLAUDE.md')
+    expect(writtenContent).toContain('# My Config')
+    expect(writtenContent).not.toContain('bmad-workspace-config')
+  })
+
+  it('deletes file when content is empty after section removal', async () => {
+    const fileContent = '<!-- bmad-workspace-config -->\nbmad stuff\n<!-- /bmad-workspace-config -->'
+    fsMock.readFile.mockResolvedValue(fileContent)
+
+    const plan = {
+      toDelete: [],
+      toRemoveSection: [
+        { path: 'CLAUDE.md', sectionId: 'bmad-workspace-config', absolutePath: '/workspace/CLAUDE.md' },
+      ],
+      hasManifest: false,
+    }
+
+    const count = await executeUninstall(plan, '/workspace')
+
+    expect(count).toBe(1)
+    expect(fsMock.remove).toHaveBeenCalledWith('/workspace/CLAUDE.md')
+    expect(fsMock.writeFile).not.toHaveBeenCalled()
   })
 
   it('collects errors per-item and throws after attempting all deletions', async () => {
