@@ -19,8 +19,10 @@ briefCount: 0
 researchCount: 5
 brainstormingCount: 1
 projectDocsCount: 0
-lastEdited: '2026-04-08'
+lastEdited: '2026-04-09'
 editHistory:
+  - date: '2026-04-09'
+    changes: 'Phase 4 规划：标记化精准管理与交互增强。核心命题：从"能生成配置文件"升级为"能精准维护配置文件"。新增 Journey 9、FR64-FR75（12 条）、3 条风险。Phase 2/3 标记已完成。Vision 更新：移除已实现项（卸载），保留 Claude Code/Codex 适配器和新手教练。新增 --project 和 --force 参数。来源：GitHub Issue #45（标记精准更新）、Issue #46（交互确认）、代码分析。'
   - date: '2026-04-08'
     changes: 'Phase 3 规划：从 Vision 占位升级为完整规划。核心命题：工作环境初始化与配置管理。新增 init 命令、模板体系、配置文件更新、卸载命令。新增 Journey 7-8、FR51-FR63、3 条风险。移除"全局 agent 多项目内存隔离"（BMAD 已天然隔离）。"新手教练流程"并入 init 交互。'
   - date: '2026-04-07'
@@ -113,23 +115,39 @@ bmad-expert 是一个以 npm 包形式分发的 BMAD 智能安装编排器。它
 - `status` 命令：检查安装健康度
 - `--json` 输出：支持 AI caller 可编程调用
 
-### Phase 2 -- 多平台扩展与安装编排升级
+### Phase 2 -- 多平台扩展与安装编排升级 ✅ 已完成
 
 - 安装流程重构：从自行文件复制升级为委托 `npx bmad-method install` 执行，bmad-expert 作为智能编排前端
 - 智能参数构建：根据目标平台和项目上下文自动确定 `--modules`、`--tools`、`--communication-language`、`--output-folder` 等参数
 - 动态版本获取：安装时动态调用 BMAD 官方安装器最新版本，不再内置固定模板文件
 - 多平台自动检测：无需用户指定 `--platform` 参数，自动识别宿主平台
-- OpenClaw 平台适配器（优先）
-- Claude Code 平台适配器
-- Codex（OpenAI）平台适配器
+- OpenClaw 平台适配器
 - 每平台独立集成测试 + 跨平台一致性验证
 - 回顾清债：README 覆盖全部命令、`status --json` 完整实现、FRAMEWORK_FILES 一致性校验
+
+### Phase 3 -- 工作环境初始化与配置管理 ✅ 已完成
+
+- 模板体系：workspace CLAUDE.md、project CLAUDE.md、workflow 模板
+- `init` 命令：workspace 结构检测、交互式收集、文件生成、幂等保护
+- 配置文件更新：`update` 命令扩展覆盖 init 生成的配置文件
+- 卸载命令：`uninstall` 命令清理 init 和 install 产物
+
+### Phase 4 -- 标记化精准管理与交互增强
+
+- 标记化段落管理引擎：精准替换/移除文件中标记段落，不影响用户自定义内容
+- project CLAUDE.md 标记对支持
+- `update` 切换到段落替换模式（非全文覆盖）
+- `uninstall` 对追加型文件精准移除标记段落（非删除整文件）
+- framework 文件更新增加确认与备份机制
+- install/init 关键节点交互确认
+- `--project <name>` 参数支持多项目非交互式指定
+- `status` 命令扩展检测 init 产物
+- `update --force` 绕过版本门禁
 
 ### Vision（Future）
 
 - 完整的 BMAD 新手教练流程
-- 卸载命令与回滚机制
-- 全局 agent 多项目内存隔离
+- Claude Code / Codex 平台适配器（待重新设计架构）
 
 ## User Journeys
 
@@ -275,6 +293,20 @@ AI 读取信息，自动执行修复步骤，无需小林介入。
 
 ---
 
+### Journey 9：阿辉的定制保护（配置精准更新）
+
+**人物：** 同一个阿辉，在 workspace CLAUDE.md 中 bmad 标记段落之外添加了团队约定（代码审查规则、部署流程说明）。
+
+**开场：** bmad-expert 发布新版本，workflow 模板和 CLAUDE.md 模板均有改进。阿辉执行 `npx bmad-expert update`。
+
+**过程：** 系统检测到 CLAUDE.md 中存在 `<!-- bmad-workspace-config -->` 标记对，精准替换标记段落内的模板内容为新版本，标记外阿辉添加的团队约定原封不动。framework 文件（AGENTS.md 等）更新前展示变更摘要，阿辉确认后执行，更新前自动创建备份。
+
+**结局：** 新版本模板改进到手，团队约定一行没丢，AGENTS.md 的个性化定制有备份可恢复。
+
+**揭示的能力需求：** 标记段落精准替换、framework 文件更新确认与备份、用户自定义内容保护。
+
+---
+
 ### Journey Requirements Summary
 
 | 能力 | 来源旅程 | Phase |
@@ -296,6 +328,11 @@ AI 读取信息，自动执行修复步骤，无需小林介入。
 | 模板体系 + init 命令 | Journey 7 | Phase 3 |
 | 配置文件跟随更新 | Journey 8 | Phase 3 |
 | 卸载命令 | — | Phase 3 |
+| 标记段落精准替换/移除 | Journey 9 | Phase 4 |
+| framework 文件更新确认与备份 | Journey 9 | Phase 4 |
+| install/init 交互确认机制 | Journey 9 | Phase 4 |
+| status 扩展检测 init 产物 | — | Phase 4 |
+| --project 参数 + --force 参数 | — | Phase 4 |
 
 ## Innovation & Novel Patterns
 
@@ -362,6 +399,8 @@ bmad-expert 是一个 npm 包形式的 CLI 工具，专为 AI 平台中介执行
 | `--action <type>` | Phase 2 | 透传至 BMAD 官方安装器的执行模式（install/update/quick-update，默认根据命令自动确定） |
 | `npx bmad-expert init` | Phase 3 | 初始化工作环境：生成 CLAUDE.md + workflow 配置文件 |
 | `npx bmad-expert uninstall` | Phase 3 | 卸载 BMAD 安装与 init 生成的配置文件 |
+| `--project <name>` | Phase 4 | init 命令指定目标项目（覆盖交互式选择） |
+| `--force` | Phase 4 | update 命令强制重新生成配置文件（绕过版本门禁） |
 
 ### 输出格式
 
@@ -439,70 +478,75 @@ bmad-expert 是一个 npm 包形式的 CLI 工具，专为 AI 平台中介执行
 
 ---
 
-### Phase 2 -- 多平台扩展与安装编排升级
+### Phase 2 -- 多平台扩展与安装编排升级 ✅ 已完成
 
-**核心用户旅程覆盖：** Journey 1（更新：智能编排体验）、Journey 4（晓雯 / OpenClaw + 自动检测）、Journey 6（小杰 / Codex 首次安装）
+**核心用户旅程覆盖：** Journey 1（更新：智能编排体验）、Journey 4（晓雯 / OpenClaw + 自动检测）
 
-**交付内容（按依赖关系排列）：**
+**交付内容：**
 
-**安装编排重构（基础，先于平台扩展）：**
-
-1. 安装流程重构：从自行文件复制升级为委托 `npx bmad-method install` 执行
-2. 智能参数构建引擎：根据目标平台和项目上下文自动确定 `--modules`、`--tools`、`--communication-language`、`--output-folder` 等参数
-3. 动态版本获取：安装时调用 BMAD 官方安装器最新版本，移除内置固定模板文件
-4. bmad-expert 补充 agent 文件（SOUL.md、IDENTITY.md 等）在 BMAD 官方安装完成后作为补充层写入
-5. 参数透传与覆盖机制：用户可通过 CLI 参数显式覆盖智能推断结果
-
-**多平台扩展（依赖安装重构完成）：**
-
-6. 多平台自动检测机制（无需用户指定 `--platform` 参数）
-7. OpenClaw 平台适配器（感知机制 + 注册契约）
+1. 安装流程重构：委托 `npx bmad-method install` 执行
+2. 智能参数构建引擎
+3. 动态版本获取
+4. bmad-expert 补充 agent 文件作为补充层写入
+5. 参数透传与覆盖机制
+6. 多平台自动检测机制
+7. OpenClaw 平台适配器
 8. 每平台独立集成测试 + 跨平台一致性验证（HappyCapy + OpenClaw）
+9. 回顾清债：README 全覆盖、`status --json` 完整实现、FRAMEWORK_FILES 一致性校验
 
 **【延期至未来 Phase】Claude Code 和 Codex 平台适配器：**
 - 原因：两平台不原生支持 agent 文件写入 + 注册契约架构
-- Claude Code 通常需通过 skills + 项目配置文件（CLAUDE.md/AGENTS.md）实现
-- Codex 通常需通过 plugins 机制实现
 - 最优实现方案待确定后重新设计并纳入规划
-
-**回顾清债（穿插完成）：**
-
-11. README 更新：覆盖 `install`/`update`/`status`/`--json` 全部命令
-12. `status --json` 完整结构化输出实现
-13. FRAMEWORK_FILES 单一数据源或 CI 一致性校验
 
 ---
 
-### Phase 3 -- 工作环境初始化与配置管理
+### Phase 3 -- 工作环境初始化与配置管理 ✅ 已完成
 
-**核心命题：** 从"只安装 BMAD 方法论"升级为"初始化完整的 AI 工作环境"——包括 CLAUDE.md 配置文件、workflow 工作流文件，以及后续的版本维护与卸载。
+**核心命题：** 从"只安装 BMAD 方法论"升级为"初始化完整的 AI 工作环境"。
 
 **核心用户旅程覆盖：** Journey 7（工作环境初始化）、Journey 8（配置文件更新）
 
+**交付内容：**
+
+1. 规范化 workspace/project CLAUDE.md 和 workflow 模板
+2. `init` 命令核心逻辑 + 幂等保护
+3. `update` 命令扩展覆盖 init 配置文件
+4. `uninstall` 命令 + 备份机制
+5. agent 模板断层修复（init --yes 智能追加、BOOTSTRAP 职责分离）
+
+---
+
+### Phase 4 -- 标记化精准管理与交互增强
+
+**核心命题：** 从"能生成配置文件"升级为"能精准维护配置文件"——update 不再全文覆盖而是段落替换，uninstall 不再删除整文件而是移除标记段落，关键操作增加用户确认与备份保护。
+
+**核心用户旅程覆盖：** Journey 9（配置精准更新）
+
 **交付内容（按依赖关系排列）：**
 
-**模板体系（基础，先于命令开发）：**
+**标记化段落管理引擎（基础，先于命令改造）：**
 
-1. 设计规范化 workspace 级 CLAUDE.md 模板（路由默认项目、声明全局约定）
-2. 设计规范化 project 级 CLAUDE.md 模板（工作流触发词、项目编码规范引用）
-3. 设计规范化 workflow 模板（通用步骤意图描述，不绑定技术栈，执行 AI 根据项目上下文自行决定具体命令）
+1. 实现 `replaceBmadSection(existingContent, newSection, markerName)` —— 精准替换标记对内容
+2. 实现 `removeBmadSection(existingContent, markerName)` —— 精准移除标记段落
+3. project CLAUDE.md 模板增加 `<!-- bmad-project-config -->` / `<!-- /bmad-project-config -->` 标记对
 
-**`bmad-expert init` 命令（依赖模板完成）：**
+**update 命令改造（依赖段落引擎）：**
 
-4. `init` 命令核心逻辑：检测 workspace 结构，交互式收集项目信息
-5. 根据模板 + 用户输入生成 workspace CLAUDE.md、project CLAUDE.md、workflow 文件
-6. 幂等保护：检测已有配置文件，提示覆盖/跳过/合并
-7. 与 `install` 可串联执行但独立运作
+4. update 对包含标记对的配置文件执行段落替换而非全文覆盖
+5. update 更新 framework 文件前展示变更摘要并要求用户确认
+6. update 更新 framework 文件前自动创建备份
 
-**配置文件更新（依赖 init 完成）：**
+**uninstall 命令改造（依赖段落引擎）：**
 
-8. 扩展 `update` 命令覆盖 init 生成的配置文件
-9. 用户已定制内容的冲突处理策略（备份 + diff 提示）
+7. uninstall 对追加型文件执行标记段落移除而非删除整文件
 
-**卸载命令：**
+**交互确认与参数增强：**
 
-10. `bmad-expert uninstall` 命令：清理 init 生成的文件（CLAUDE.md、workflow）+ install 安装的 _bmad 目录
-11. 卸载前确认 + 备份机制
+8. `init --project <name>` 参数支持多项目非交互式指定
+9. `init --yes` 多项目时输出所选项目名称
+10. `status` 扩展检测 init 产物，区分 install-only 和完全就绪
+11. `update --force` 绕过版本门禁
+12. install/init 关键决策节点交互确认
 
 ---
 
@@ -522,6 +566,9 @@ bmad-expert 是一个 npm 包形式的 CLI 工具，专为 AI 平台中介执行
 | 模板通用性不足导致用户大量定制 | 中 | 模板仅描述步骤意图不绑技术栈，保持最大通用性；init 交互式收集项目特定信息 |
 | 配置文件更新时覆盖用户定制内容 | 高 | 强制备份 + diff 展示 + 用户确认，不允许静默覆盖 |
 | init 与 install 职责边界模糊 | 低 | PRD 明确分工：install 管 _bmad 方法论，init 管 CLAUDE.md + workflow 配置 |
+| 标记段落解析错误（标记残缺/嵌套/格式异常） | 中 | 严格开闭标记对匹配，残缺标记视为无效触发重新生成；单元测试覆盖边界情况 |
+| 多标记对文件中段落定位冲突 | 低 | 每种标记使用唯一命名（bmad-workspace-config / bmad-project-config），不允许同名标记对重复出现 |
+| framework 文件确认增加用户操作步骤 | 低 | `--yes` 模式跳过确认，AI agent 调用场景不受影响；交互模式仅在用户直接调用 CLI 时生效 |
 
 ## Functional Requirements
 
@@ -629,6 +676,30 @@ bmad-expert 是一个 npm 包形式的 CLI 工具，专为 AI 平台中介执行
 - FR61: 系统提供 `uninstall` 命令，清理 init 生成的配置文件和 install 安装的 _bmad 目录
 - FR62: `uninstall` 执行前要求用户确认，并提供备份选项
 - FR63: `uninstall` 完成后输出清理结果摘要，明确列出已删除和已保留的文件
+
+### 标记化段落管理（Phase 4）
+
+- FR64: 系统提供标记段落替换能力：在包含 `<!-- bmad-xxx -->` / `<!-- /bmad-xxx -->` 标记对的文件中，精准替换标记对内的内容为新版本模板内容，标记对外的用户自定义内容不受影响
+- FR65: 系统提供标记段落移除能力：精准移除标记对及其包含的内容，保留文件其余部分完整
+- FR66: project CLAUDE.md 模板包含 `<!-- bmad-project-config -->` / `<!-- /bmad-project-config -->` 标记对，与 workspace CLAUDE.md 的 `<!-- bmad-workspace-config -->` 标记对机制一致
+
+### 精准更新与用户内容保护（Phase 4）
+
+- FR67: `update` 命令对包含标记对的配置文件（workspace CLAUDE.md、project CLAUDE.md）执行段落替换而非全文覆盖，用户在标记对外添加的自定义内容不受影响
+- FR68: `update` 命令更新 framework 文件（SOUL.md、IDENTITY.md、AGENTS.md、BOOTSTRAP.md）前展示变更摘要（文件名 + 行数变化）并要求用户确认，`--yes` 模式跳过确认
+- FR69: `update` 命令更新 framework 文件前自动创建备份副本，备份路径在更新摘要中展示
+
+### 精准卸载（Phase 4）
+
+- FR70: `uninstall` 命令对通过追加模式（`action: 'appended'`）生成的文件执行标记段落移除而非删除整个文件，用户在标记对外的原有内容完整保留
+
+### 交互确认与参数增强（Phase 4）
+
+- FR71: `init` 命令支持 `--project <name>` 参数，在多项目 workspace 中可非交互式指定目标项目而非默认选择第一个
+- FR72: `init --yes` 模式在多项目 workspace 中自动选择项目后向执行上下文输出所选项目名称，不静默跳过
+- FR73: `status` 命令检测范围扩展至 init 生成的配置文件（CLAUDE.md、workflow 文件），输出区分"install 完成 + init 未完成"和"完全就绪"两种状态
+- FR74: `update` 命令支持 `--force` 参数，绕过模板版本一致性门禁强制重新生成配置文件，用于用户删除文件后恢复场景
+- FR75: install 和 init 流程的关键决策节点（模块选择、文件覆盖确认、目标项目选择）提供交互式确认提示，`--yes` 模式跳过全部确认
 
 ## Non-Functional Requirements
 
