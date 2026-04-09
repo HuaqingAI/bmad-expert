@@ -3,6 +3,7 @@
 Project-specific instructions and context for Claude Code in this desktop.
 
 
+<!-- bmad-workspace-config -->
 ## Default Project
 
 **When the user does not specify a project, default to `PROJECT_NAME`.**
@@ -15,3 +16,4 @@ Project-specific instructions and context for Claude Code in this desktop.
 ## Repository Operations
 
 - For routine repository operations (PR, Issue, Project, CI status, code review, and git remote operations such as pull/push), use `/github`
+<!-- /bmad-workspace-config -->

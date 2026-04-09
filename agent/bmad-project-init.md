@@ -28,6 +28,19 @@ Wait for the command to complete. If it exits with code 0, installation succeede
 
 After the command completes, check that `_bmad/bmm/config.yaml` exists and is readable. If it does not exist, the installation failed.
 
+## Step 3.5 — Workspace 初始化
+
+install 完成后（`_bmad/bmm/config.yaml` 已存在），自动执行 workspace 初始化：
+
+```bash
+npx bmad-expert init --yes
+```
+
+- 成功 → 输出 `BMAD 方法论安装完成，workspace 配置已就绪。`
+- 失败 → 输出 `BMAD 方法论已安装。Workspace 配置未完成，可稍后执行 npx bmad-expert init 完成配置。`
+
+无论成功或失败，都继续进入 Step 4。
+
 ## Step 4 — Announce and Redirect
 
 If installation succeeded (Step 2 exit code 0, Step 3 verified), output exactly: "BMAD 环境已初始化。正在进入 bmad-help 工作流..."

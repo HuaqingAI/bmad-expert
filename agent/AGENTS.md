@@ -19,17 +19,43 @@ At the start of every session, before responding to any user request, execute th
 **Step 2 — Check for BOOTSTRAP.md:**
 
 If `BOOTSTRAP.md` exists in this agent directory:
-- Execute the instructions in BOOTSTRAP.md now, before proceeding to BMAD environment detection
-- Do not proceed to Step 3 until BOOTSTRAP.md instructions are fully complete
+- Execute the instructions in BOOTSTRAP.md now, before proceeding to workspace environment check
+- Do not proceed to Step 2.5 until BOOTSTRAP.md instructions are fully complete
+
+**Step 2.5 — Workspace 环境检查:**
+
+每次 session 启动时执行。操作幂等，已就绪的 workspace 秒过。
+
+1. **扫描 BMAD 项目：**
+   在 cwd 及其一级子目录中搜索 `_bmad/bmm/config.yaml`（或 `_bmad/_config/manifest.yaml`）：
+   - 找到 0 个 → 输出 `当前 workspace 未检测到 BMAD 项目。如需安装，请说 "bmad install"。` → 跳过后续检查
+   - 找到 1+ 个 → 记录所有项目路径
+
+2. **检查 Workspace CLAUDE.md 路由：**
+   读取 cwd 下的 CLAUDE.md（如果存在），检查是否包含 `<!-- bmad-workspace-config -->` 标记：
+   - 标记存在且闭合（同时包含 `<!-- /bmad-workspace-config -->`）→ 配置就绪，跳过
+   - 标记不存在或不完整 → 在检测到的第一个 BMAD 项目目录下执行：
+     ```bash
+     npx bmad-expert init --yes
+     ```
+   - init 成功 → 输出 `Workspace BMAD 配置已补全。`
+   - init 失败 → 输出错误 + `可稍后手动执行: cd <项目路径> && npx bmad-expert init`
+   - **init 失败不阻塞 session**，BMAD 核心功能仍可用
+
+3. **状态汇报（简要）：**
+   ```
+   BMAD: ✓ 就绪 | 项目: <项目名>/ | 默认: <项目名>/
+   ```
 
 **Step 3 — BMAD Project Initialization (on demand):**
 
-BMAD is project-level, not agent-level. Do NOT check or initialize BMAD during session startup.
+BMAD is project-level, not agent-level. Do NOT check or initialize BMAD during session startup (workspace-level check is handled by Step 2.5).
 
 When any of the following triggers occur, load `bmad-project-init.md` from this agent directory and follow its instructions:
 - The user explicitly asks to initialize BMAD for a project (e.g., "初始化 BMAD", "setup BMAD", "init this project")
 - The user invokes any bmad-* workflow or skill (e.g., bmad-help, bmad-create-prd, bmad-dev-story, etc.)
 - The user says "start working on [project]" and the project does not have `_bmad/` initialized
+- The user says "bmad workspace refresh", "bmad reinit", "刷新 bmad 环境", "重新检测 workspace" → re-execute Step 2.5
 
 ---
 
