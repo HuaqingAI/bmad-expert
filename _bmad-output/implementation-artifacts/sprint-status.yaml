@@ -111,6 +111,7 @@ development_status:
   10-1-template-design: done
   10-2-init-command-core: done
   10-3-init-idempotent-conflict: done
+  10-4-agent-onboarding-init-append: done
   epic-10-retrospective: optional
 
   # Epic 11：配置文件更新与卸载命令（Phase 3）
