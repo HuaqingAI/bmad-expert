@@ -4,13 +4,16 @@ This file is loaded on demand when BMAD project initialization is needed. Follow
 
 ## Step 1 — BMAD Environment Detection
 
-Check whether the current working directory (the project root) meets the following condition:
+Check whether the current working directory (the project root) meets the following conditions:
 
-- **If `_bmad/` exists AND `_bmad/bmm/config.yaml` is present and readable** → BMAD is initialized for this project. Skip initialization. Proceed directly to the user's request or run `bmad-help` if no specific request was made.
+- **Case A — 完全就绪：** `_bmad/bmm/config.yaml` 存在 AND workspace CLAUDE.md 包含完整 `<!-- bmad-workspace-config -->` … `<!-- /bmad-workspace-config -->` 标记对
+  → 跳过初始化。直接执行用户请求或运行 `bmad-help`。
 
-- **If `_bmad-output/` exists but `_bmad/` does not, OR `_bmad/` exists but `_bmad/bmm/config.yaml` is missing or unreadable** → Partial state. Proceed to Step 2.
+- **Case B — BMAD 已安装，workspace 未配置：** `_bmad/bmm/config.yaml` 存在 BUT workspace CLAUDE.md 不存在、或缺少完整 bmad 标记对
+  → 跳过 Step 2/3（无需安装），直接进入 **Step 3.5** 执行 workspace init。
 
-- **If neither `_bmad/` nor `_bmad-output/` exists** → Not initialized. Proceed to Step 2.
+- **Case C — 需要安装：** `_bmad/` 不存在、或 `_bmad/bmm/config.yaml` 缺失/不可读
+  → 进入 Step 2 执行完整安装流程。
 
 ## Step 2 — Install BMAD via Official Installer
 
@@ -30,21 +33,18 @@ After the command completes, check that `_bmad/bmm/config.yaml` exists and is re
 
 ## Step 3.5 — Workspace 初始化
 
-install 完成后（`_bmad/bmm/config.yaml` 已存在），自动执行 workspace 初始化：
+`_bmad/bmm/config.yaml` 已存在时（无论经由 Step 2 安装还是 Case B 直接跳入），执行 workspace 初始化：
 
 ```bash
 npx bmad-expert init --yes
 ```
 
-- 成功 → 输出 `BMAD 方法论安装完成，workspace 配置已就绪。`
-- 失败 → 输出 `BMAD 方法论已安装。Workspace 配置未完成，可稍后执行 npx bmad-expert init 完成配置。`
+- 成功 → 输出 `Workspace BMAD 配置已就绪。`
+- 失败 → 输出 `Workspace 配置未完成，可稍后执行 npx bmad-expert init 完成配置。`
 
 无论成功或失败，都继续进入 Step 4。
 
 ## Step 4 — Announce and Redirect
 
-If installation succeeded (Step 2 exit code 0, Step 3 verified), output exactly: "BMAD 环境已初始化。正在进入 bmad-help 工作流..."
-
-If installation failed (non-zero exit code or config.yaml missing), output the command's error output followed by: "BMAD 初始化失败：请检查网络连接和目录写入权限。" and stop.
-
-On success, invoke `bmad-help` to guide the user through the next steps.
+- **Case B（仅 init）：** init 成功 → 输出 `Workspace BMAD 配置已补全。` 然后返回调用方（Step 2.5 或用户请求）。init 失败 → 输出错误提示，不阻塞。
+- **Case C（install + init）：** install 成功 → 输出 `BMAD 环境已初始化。正在进入 bmad-help 工作流...` → 调用 `bmad-help`。install 失败 → 输出错误 + `BMAD 初始化失败：请检查网络连接和目录写入权限。` → 停止。
