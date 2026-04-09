@@ -449,7 +449,25 @@ templates/
 
 **幂等保护（FR56）：**
 - 检测目标路径已有同名文件时，交互提示三选一：覆盖（备份原文件）/ 跳过 / 查看 diff
-- `--yes` 模式下默认跳过已有文件，不静默覆盖
+- `--yes` 模式下对 `workspace-claude` 类型文件执行**智能追加**，对其他类型文件默认跳过：
+  - 检查已有文件是否包含 bmad 配置标记（`<!-- bmad-workspace-config -->` / `<!-- /bmad-workspace-config -->`）
+  - 标记完整存在 → skip（已配置，无需操作）
+  - 标记不存在或不完整 → 从模板中提取 bmad 段落，追加到已有文件末尾（`action: 'appended'`）
+  - 追加前确保空行分隔，不修改用户原有内容
+  - project-claude、workflow 类型文件：保持原有 skip 行为不变
+
+**bmad 配置段落标记：**
+- 模板 `templates/workspace-claude.md` 中，bmad 管理的段落用 HTML 注释开闭标记对包裹：
+  ```markdown
+  <!-- bmad-workspace-config -->
+  ## Default Project
+  ...（bmad 路由配置）
+  ## Repository Operations
+  ...
+  <!-- /bmad-workspace-config -->
+  ```
+- 标记用途：① `init --yes` 追加判断锚点；② `AGENTS.md` Session Startup 环境检查锚点
+- 检测规则：开闭标记必须同时存在才算有效，残缺标记视为无效触发重新追加
 
 **Init 清单文件（`.bmad-init.json`）：**
 
