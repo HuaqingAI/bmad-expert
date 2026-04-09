@@ -1,6 +1,6 @@
 # Story 12.4: uninstall 精准段落移除
 
-Status: review
+Status: done
 
 ## Story
 
