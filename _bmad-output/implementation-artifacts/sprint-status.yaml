@@ -125,7 +125,7 @@ development_status:
   12-1-section-manager: done
   12-2-init-project-claude-markers: done
   12-3-update-precision-replace: done
-  12-4-uninstall-precision-remove: backlog
+  12-4-uninstall-precision-remove: done
   epic-12-retrospective: optional
 
   # Epic 13：交互确认与 CLI 增强（Phase 4）
