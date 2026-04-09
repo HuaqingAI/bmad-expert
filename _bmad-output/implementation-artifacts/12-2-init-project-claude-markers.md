@@ -1,6 +1,6 @@
 # Story 12.2: init 增强 — project-claude 标记化与 action 字段
 
-Status: review
+Status: done
 
 ## Story
 

@@ -123,7 +123,7 @@ development_status:
   # Epic 12：标记化精准管理引擎与操作升级（Phase 4）
   epic-12: in-progress
   12-1-section-manager: done
-  12-2-init-project-claude-markers: review
+  12-2-init-project-claude-markers: done
   12-3-update-precision-replace: backlog
   12-4-uninstall-precision-remove: backlog
   epic-12-retrospective: optional
