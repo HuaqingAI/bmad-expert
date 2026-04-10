@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-03-23T00:00:00Z
-last_updated: 2026-04-09T20:00:00Z
+last_updated: 2026-04-09T21:00:00Z
 project: bmad-expert
 project_key: NOKEY
 tracking_system: file-system
@@ -121,7 +121,7 @@ development_status:
   epic-11-retrospective: optional
 
   # Epic 12：标记化精准管理引擎与操作升级（Phase 4）
-  epic-12: in-progress
+  epic-12: done
   12-1-section-manager: done
   12-2-init-project-claude-markers: done
   12-3-update-precision-replace: done
@@ -129,7 +129,7 @@ development_status:
   epic-12-retrospective: optional
 
   # Epic 13：交互确认与 CLI 增强（Phase 4）
-  epic-13: in-progress
-  13-1-yes-output-interactive-menu: backlog
+  epic-13: done
+  13-1-yes-output-interactive-menu: done
   13-2-status-init-expansion: done
   epic-13-retrospective: optional
